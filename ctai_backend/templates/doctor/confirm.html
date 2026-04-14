@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}报告确认 - SAM-Med3D{% endblock %}
+
+{% block body %}
+<div class="min-h-screen" style="background-color: #F5F7FA;">
+    <div class="bg-white px-4 sm:px-8 py-4" style="border-bottom: 1px solid #E5E7EB;">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 style="font-size: clamp(16px, 4vw, 20px); font-weight: 600; color: #030213;">确认报告</h1>
+                    <p class="text-responsive-sm" style="color: #717182; margin-top: 2px;">审核AI分析结果并提交最终诊断</p>
+                </div>
+                <button onclick="window.location.href='{{ url_for('doctor.dashboard') }}'" class="btn btn-secondary btn-sm">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">返回</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-8 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+            <div class="lg:col-span-3">
+                <div class="bg-white rounded-lg p-4 sm:p-6 mb-4" style="border: 1px solid #E5E7EB;">
+                    <h3 class="mb-4 flex items-center gap-2" style="font-size: 16px; font-weight: 600; color: #030213;">
+                        <i data-lucide="image" class="w-5 h-5" style="color: #717182;"></i>
+                        CT图像预览
+                    </h3>
+                    <div class="bg-black rounded-lg relative overflow-hidden mb-4" style="height: clamp(250px, 40vw, 400px);">
+                        <div class="absolute top-3 left-3 px-3 py-1 rounded" style="background-color: rgba(0, 0, 0, 0.7); font-size: 12px; color: #FFFFFF;">
+                            轴位（横断面）
+                        </div>
+                        <div class="absolute top-3 right-3 p-2 rounded" style="background-color: rgba(0, 0, 0, 0.7);">
+                            <i data-lucide="maximize-2" class="w-4 h-4" style="color: #FFFFFF;"></i>
+                        </div>
+                        <div class="absolute inset-0 flex items-center justify-center" style="background-color: #1a1a1a;">
+                            <div class="relative w-full h-full flex items-center justify-center">
+                                <div class="absolute inset-0" style="background-image: radial-gradient(circle, #333 1px, transparent 1px); background-size: 20px 20px; opacity: 0.3;"></div>
+                                <svg width="100%" height="100%" viewBox="0 0 400 400" style="max-width: 100%; max-height: 100%;">
+                                    <ellipse cx="200" cy="200" rx="150" ry="140" fill="#2a2a2a" stroke="#444" stroke-width="2"/>
+                                    <ellipse cx="150" cy="180" rx="50" ry="80" fill="rgba(255, 0, 0, 0.4)" stroke="rgba(255, 0, 0, 0.6)" stroke-width="1"/>
+                                    <ellipse cx="250" cy="180" rx="50" ry="80" fill="rgba(255, 0, 0, 0.4)" stroke="rgba(255, 0, 0, 0.6)" stroke-width="1"/>
+                                    <ellipse cx="200" cy="220" rx="35" ry="45" fill="rgba(0, 255, 0, 0.4)" stroke="rgba(0, 255, 0, 0.6)" stroke-width="1"/>
+                                    <rect x="195" y="150" width="10" height="60" fill="rgba(0, 0, 255, 0.4)" stroke="rgba(0, 0, 255, 0.6)" stroke-width="1"/>
+                                    <circle cx="220" cy="160" r="12" fill="rgba(255, 255, 0, 0.5)" stroke="rgba(255, 255, 0, 0.7)" stroke-width="2"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="absolute bottom-3 left-3 right-3 text-center" style="font-size: 12px; color: #888;">
+                            切片 50 / 100
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 mb-4">
+                        <span style="font-size: 14px; color: #717182;">切片：</span>
+                        <input
+                            type="range"
+                            min="1"
+                            max="100"
+                            value="50"
+                            class="flex-1"
+                            style="accent-color: #165DFF;"
+                        />
+                        <span style="font-size: 14px; color: #030213; font-weight: 600; min-width: 40px;">50</span>
+                    </div>
+
+                    <div class="p-3 rounded-lg flex items-center gap-2 overflow-x-auto" style="background-color: #F5F7FA; border: 1px solid #E5E7EB;">
+                        <button class="p-2 rounded-lg hover:bg-gray-100" title="放大">
+                            <i data-lucide="zoom-in" class="w-[18px] h-[18px]" style="color: #717182;"></i>
+                        </button>
+                        <button class="p-2 rounded-lg hover:bg-gray-100" title="缩小">
+                            <i data-lucide="zoom-out" class="w-[18px] h-[18px]" style="color: #717182;"></i>
+                        </button>
+                        <button class="p-2 rounded-lg hover:bg-gray-100" title="重置视图">
+                            <i data-lucide="maximize" class="w-[18px] h-[18px]" style="color: #717182;"></i>
+                        </button>
+                        <div class="w-px h-6 mx-1" style="background-color: #E5E7EB;"></div>
+                        <button class="p-2 rounded-lg hover:bg-gray-100" title="上一个切片">
+                            <i data-lucide="chevron-left" class="w-[18px] h-[18px]" style="color: #717182;"></i>
+                        </button>
+                        <button class="p-2 rounded-lg hover:bg-gray-100" title="下一个切片">
+                            <i data-lucide="chevron-right" class="w-[18px] h-[18px]" style="color: #717182;"></i>
+                        </button>
+                        <div class="w-px h-6 mx-1" style="background-color: #E5E7EB;"></div>
+                        <button class="p-2 rounded-lg hover:bg-gray-100" title="切换窗宽窗位">
+                            <i data-lucide="sliders" class="w-[18px] h-[18px]" style="color: #717182;"></i>
+                        </button>
+                        <button class="p-2 rounded-lg hover:bg-gray-100" title="测量">
+                            <i data-lucide="ruler" class="w-[18px] h-[18px]" style="color: #717182;"></i>
+                        </button>
+                        <div class="w-px h-6 mx-1" style="background-color: #E5E7EB;"></div>
+                        <button class="p-2 rounded-lg hover:bg-gray-100" title="下载图像">
+                            <i data-lucide="download" class="w-[18px] h-[18px]" style="color: #717182;"></i>
+                        </button>
+                        <button class="p-2 rounded-lg hover:bg-gray-100" title="打印">
+                            <i data-lucide="printer" class="w-[18px] h-[18px]" style="color: #717182;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg p-4 sm:p-6" style="border: 1px solid #E5E7EB;">
+                    <h3 class="mb-4 flex items-center gap-2" style="font-size: 16px; font-weight: 600; color: #030213;">
+                        <i data-lucide="cpu" class="w-5 h-5" style="color: #717182;"></i>
+                        AI分析结果
+                    </h3>
+                    <div class="space-y-3">
+                        {% for annotation in annotations %}
+                        <div class="p-4 rounded-lg" style="background-color: #F5F7FA; border: 1px solid #E5E7EB;">
+                            <div class="flex justify-between items-center mb-3">
+                                <span style="font-size: 14px; font-weight: 600; color: #030213;">{{ annotation.label or '标注' ~ loop.index }}</span>
+                                <span class="px-2 py-1 rounded text-xs" style="background-color: #E8F7F0; color: #00B42A;">AI</span>
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" style="font-size: 12px; color: #717182;">
+                                <div>
+                                    <span>类型:</span>
+                                    <span style="color: #030213; font-weight: 500;">{{ annotation.annotation_type or '未知' }}</span>
+                                </div>
+                                <div>
+                                    <span>严重程度:</span>
+                                    <span style="color: #030213; font-weight: 500;">{{ annotation.severity or '未知' }}</span>
+                                </div>
+                                <div>
+                                    <span>位置:</span>
+                                    <span style="color: #030213; font-weight: 500;">({{ annotation.coordinates_x|int if annotation.coordinates_x else 0 }}, {{ annotation.coordinates_y|int if annotation.coordinates_y else 0 }})</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-8" style="color: #717182;">
+                            <i data-lucide="info" class="w-10 h-10 mb-3" style="margin: 0 auto;"></i>
+                            <p style="font-size: 14px;">暂无AI分析结果</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2">
+                <form method="POST" class="bg-white rounded-lg p-4 sm:p-6 mb-4" style="border: 1px solid #E5E7EB;">
+                    <h3 class="mb-4 flex items-center gap-2" style="font-size: 16px; font-weight: 600; color: #030213;">
+                        <i data-lucide="file-text" class="w-5 h-5" style="color: #717182;"></i>
+                        最终诊断报告
+                    </h3>
+
+                    <div class="form-group">
+                        <label class="form-label">检查信息</label>
+                        <div class="p-4 rounded-lg" style="background-color: #F5F7FA; font-size: 13px;">
+                            <div class="mb-2">
+                                <span style="color: #717182;">患者: </span>
+                                <span style="color: #030213; font-weight: 500;">{{ ct_image.patient.full_name if ct_image.patient else '未知' }}</span>
+                            </div>
+                            <div class="mb-2">
+                                <span style="color: #717182;">检查部位: </span>
+                                <span style="color: #030213;">{{ ct_image.body_part or '未知' }}</span>
+                            </div>
+                            <div>
+                                <span style="color: #717182;">检查日期: </span>
+                                <span style="color: #030213;">{{ ct_image.created_at|format_datetime if ct_image.created_at else '未知' }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">诊断报告</label>
+                        <textarea
+                            name="final_report"
+                            class="input"
+                            rows="6"
+                            placeholder="请输入结构化诊断报告..."
+                            style="font-size: 13px; line-height: 1.6;"
+                        >CT检查所见：
+双肺纹理清晰，未见明显异常密度影。双肺门结构正常。纵隔居中，未见肿大淋巴结。心脏形态正常。
+
+片内所示腹部实质脏器未见明显异常。
+
+{% if annotations %}
+AI辅助检测结果：
+{% for annotation in annotations %}
+- {{ annotation.label or '异常' ~ loop.index }}：位于{{ annotation.annotation_type or '未知部位' }}，{{ annotation.severity or '未知' }}度
+{% endfor %}
+{% endif %}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">诊断结论</label>
+                        <textarea
+                            name="final_diagnosis"
+                            class="input"
+                            rows="3"
+                            placeholder="请输入诊断结论..."
+                            style="font-size: 13px; line-height: 1.6;"
+                        >1. 胸部CT平扫未见明显异常
+2. {% if annotations %}建议进一步复查{% else %}建议定期随诊复查{% endif %}</textarea>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <button type="submit" class="w-full flex items-center justify-center gap-2 rounded-lg active:opacity-80" style="background-color: #00B42A; color: #FFFFFF; font-size: 14px; font-weight: 600; height: 48px; border: none; cursor: pointer;">
+                            <i data-lucide="check" class="w-5 h-5"></i>
+                            确认并提交
+                        </button>
+                        <button type="button" onclick="window.location.href='{{ url_for('doctor.annotate', report_id=ct_image.id) }}'" class="w-full flex items-center justify-center gap-2 rounded-lg" style="background-color: #FFFFFF; color: #717182; font-size: 14px; height: 48px; border: 1px solid #E5E7EB; cursor: pointer;">
+                            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                            返回修改
+                        </button>
+                    </div>
+                </form>
+
+                <div class="bg-white rounded-lg p-4 sm:p-6" style="border: 1px solid #E5E7EB;">
+                    <h3 class="mb-4 flex items-center gap-2" style="font-size: 16px; font-weight: 600; color: #030213;">
+                        <i data-lucide="clock" class="w-5 h-5" style="color: #717182;"></i>
+                        处理记录
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style="background-color: #00B42A;"></div>
+                            <div>
+                                <p style="font-size: 13px; color: #030213; font-weight: 500;">报告已确认</p>
+                                <p style="font-size: 12px; color: #717182;">2026-04-10 14:30</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style="background-color: #00B42A;"></div>
+                            <div>
+                                <p style="font-size: 13px; color: #030213; font-weight: 500;">AI分析完成</p>
+                                <p style="font-size: 12px; color: #717182;">2026-04-10 14:00</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style="background-color: #00B42A;"></div>
+                            <div>
+                                <p style="font-size: 13px; color: #030213; font-weight: 500;">医生开始审阅</p>
+                                <p style="font-size: 12px; color: #717182;">2026-04-10 10:00</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style="background-color: #165DFF;"></div>
+                            <div>
+                                <p style="font-size: 13px; color: #030213; font-weight: 500;">患者上传CT图像</p>
+                                <p style="font-size: 12px; color: #717182;">2026-04-09 09:00</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (!confirm('确认提交报告？提交后将通知患者。')) {
+            e.preventDefault();
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}上传CT图像 - SAM-Med3D{% endblock %}
+
+{% block body %}
+<div class="min-h-screen" style="background-color: #F5F7FA;">
+    <div class="page-header">
+        <div class="container">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-responsive-lg font-semibold" style="color: #030213;">上传CT图像</h1>
+                    <p class="text-responsive-sm" style="color: #717182; margin-top: 2px;">请上传您的CT检查图像</p>
+                </div>
+                <button onclick="window.history.back()" class="btn btn-secondary btn-sm">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">返回</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-content">
+        <div class="container container-sm">
+            <div class="card">
+                <div class="p-3 sm:p-4 rounded-lg mb-4" style="background-color: #E8F3FF; border: 1px solid #165DFF;">
+                    <div class="flex items-start gap-2.5">
+                        <i data-lucide="info" class="w-4 h-4 flex-shrink-0 mt-0.5" style="color: #165DFF;"></i>
+                        <div>
+                            <p class="text-responsive-sm font-medium mb-1" style="color: #030213;">上传须知</p>
+                            <p class="text-responsive-xs" style="color: #717182; line-height: 1.6;">
+                                请上传您的CT检查图像文件。系统支持 <strong>NIfTI (.nii, .nii.gz)</strong>、DICOM、PNG、JPG 格式。
+                                上传后，医生将进行专业标注，AI模型将进行辅助分析。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="upload-form" method="POST" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label class="form-label">CT图像文件 <span style="color: #F53F3F;">*</span></label>
+                        <div id="drop-zone"
+                             onclick="document.getElementById('ct_file').click();"
+                             style="border: 2px dashed #E5E7EB; border-radius: 12px; padding: 24px 16px; text-align: center; cursor: pointer; transition: all 0.2s; background-color: #FAFAFA;"
+                             onmouseenter="this.style.borderColor='#165DFF'; this.style.backgroundColor='#E8F3FF';"
+                             onmouseleave="this.style.borderColor='#E5E7EB'; this.style.backgroundColor='#FAFAFA';">
+                            <input type="file" id="ct_file" name="ct_file" style="display: none;" accept=".nii,.nii.gz,.dcm,.png,.jpg,.jpeg" onchange="handleFileSelect(this);" />
+
+                            <div id="upload-placeholder">
+                                <i data-lucide="upload-cloud" class="w-10 h-10 sm:w-12 sm:h-12" style="color: #717182; margin-bottom: 12px;"></i>
+                                <p class="text-responsive-sm font-medium mb-1" style="color: #030213;">点击或拖拽文件到此处上传</p>
+                                <p class="text-responsive-xs" style="color: #717182;">支持 NIfTI、DICOM、PNG、JPG 格式，单文件不超过 100MB</p>
+                            </div>
+
+                            <div id="file-preview" style="display: none;">
+                                <i data-lucide="file-check" class="w-10 h-10 sm:w-12 sm:h-12" style="color: #00B42A; margin-bottom: 12px;"></i>
+                                <p id="file-name" class="text-responsive-sm font-medium mb-1" style="color: #030213;"></p>
+                                <p id="file-size" class="text-responsive-xs" style="color: #717182;"></p>
+                                <p id="file-type" class="text-responsive-xs" style="color: #165DFF; margin-top: 4px;"></p>
+                                <button type="button" onclick="event.stopPropagation(); clearFile();" class="btn btn-secondary btn-sm mt-3">清除文件</button>
+                            </div>
+                        </div>
+                        <div id="file-error" class="mt-2" style="display: none;">
+                            <p class="text-responsive-xs" style="color: #F53F3F;"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">检查部位 <span style="color: #F53F3F;">*</span></label>
+                        <select name="body_part" id="body_part" class="input" required onchange="updateUploadHint()">
+                            <option value="">请选择检查部位</option>
+                            <option value="头部">头部</option>
+                            <option value="胸部">胸部</option>
+                            <option value="腹部">腹部</option>
+                            <option value="盆腔">盆腔</option>
+                            <option value="脊椎">脊椎</option>
+                            <option value="四肢">四肢</option>
+                            <option value="全身">全身</option>
+                        </select>
+                    </div>
+
+                    <div id="upload-hint" class="p-3 rounded-lg mb-4" style="background-color: #F5F7FA; border: 1px solid #E5E7EB; display: none;">
+                        <p class="text-responsive-xs" style="color: #717182;">
+                            <i data-lucide="lightbulb" class="w-3 h-3 inline-block mr-1"></i>
+                            <span id="hint-text"></span>
+                        </p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">检查描述（可选）</label>
+                        <textarea name="description" id="description" class="input" rows="3" placeholder="请输入检查描述或临床诊断信息（如有）..."></textarea>
+                    </div>
+
+                    <div id="upload-progress" style="display: none;" class="mb-4">
+                        <div class="progress-bar mb-2">
+                            <div id="progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
+                        </div>
+                        <p id="progress-text" class="text-responsive-xs text-center" style="color: #717182;">上传中... 0%</p>
+                    </div>
+
+                    <div id="upload-status" class="mb-4 p-4 rounded-lg" style="display: none;">
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button type="submit" id="submit-btn" class="btn btn-primary btn-lg flex-1">
+                            <i data-lucide="upload" class="w-4 h-4"></i>
+                            提交上传
+                        </button>
+                        <button type="button" onclick="window.history.back()" class="btn btn-secondary btn-lg">
+                            取消
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-6 pt-6" style="border-top: 1px solid #E5E7EB;">
+                    <h4 class="mb-3" style="font-size: 14px; color: #030213;">CT诊断流程说明</h4>
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: #E8F3FF;">
+                                <span style="font-size: 12px; color: #165DFF; font-weight: 600;">1</span>
+                            </div>
+                            <div>
+                                <p style="font-size: 13px; color: #030213; margin-bottom: 2px;">上传CT图像</p>
+                                <p style="font-size: 12px; color: #717182;">上传 NIfTI 格式的 CT 检查图像</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: #FFF3E8;">
+                                <span style="font-size: 12px; color: #FF7D00; font-weight: 600;">2</span>
+                            </div>
+                            <div>
+                                <p style="font-size: 13px; color: #030213; margin-bottom: 2px;">医生专业标注</p>
+                                <p style="font-size: 12px; color: #717182;">医生在系统中对 CT 图像进行专业标注</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: #F5F7FA;">
+                                <span style="font-size: 12px; color: #717182; font-weight: 600;">3</span>
+                            </div>
+                            <div>
+                                <p style="font-size: 13px; color: #030213; margin-bottom: 2px;">AI 辅助分析</p>
+                                <p style="font-size: 12px; color: #717182;">提交标注结果至 AI 分析模块进行处理</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: #F5F7FA;">
+                                <span style="font-size: 12px; color: #717182; font-weight: 600;">4</span>
+                            </div>
+                            <div>
+                                <p style="font-size: 13px; color: #030213; margin-bottom: 2px;">生成诊断报告</p>
+                                <p style="font-size: 12px; color: #717182;">AI 处理后生成包含标注信息的 CT 文件及诊断报告</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedFile = null;
+
+function getFileExtension(filename) {
+    if (!filename || filename.indexOf('.') === -1) return '';
+    const parts = filename.split('.');
+    if (parts.length >= 2) {
+        const lastExt = parts[parts.length - 1].toLowerCase();
+        if (lastExt === 'gz' && parts.length >= 3) {
+            const secondLastExt = parts[parts.length - 2].toLowerCase();
+            if (secondLastExt === 'nii') {
+                return 'nii.gz';
+            }
+        }
+        return lastExt;
+    }
+    return '';
+}
+
+function handleFileSelect(input) {
+    const file = input.files[0];
+    if (file) {
+        if (!validateFile(file)) {
+            return;
+        }
+        selectedFile = file;
+        document.getElementById('upload-placeholder').style.display = 'none';
+        document.getElementById('file-preview').style.display = 'block';
+        document.getElementById('file-name').textContent = file.name;
+        document.getElementById('file-size').textContent = formatFileSize(file.size);
+        document.getElementById('file-type').textContent = getFileTypeLabel(file.name);
+        document.getElementById('file-error').style.display = 'none';
+        lucide.createIcons();
+        updateUploadHint();
+    }
+}
+
+function validateFile(file) {
+    const validExtensions = ['nii', 'nii.gz', 'dcm', 'png', 'jpg', 'jpeg'];
+    const maxSize = 100 * 1024 * 1024;
+
+    const extension = getFileExtension(file.name);
+    const isValidExtension = validExtensions.includes(extension);
+    const isValidSize = file.size <= maxSize;
+
+    if (!isValidExtension) {
+        showFileError('不支持的文件格式，请上传 NIfTI、DICOM、PNG 或 JPG 格式文件');
+        return false;
+    }
+
+    if (!isValidSize) {
+        showFileError('文件大小超过 100MB 限制');
+        return false;
+    }
+
+    return true;
+}
+
+function showFileError(message) {
+    const errorDiv = document.getElementById('file-error');
+    errorDiv.querySelector('p').textContent = message;
+    errorDiv.style.display = 'block';
+    clearFile();
+}
+
+function getFileTypeLabel(filename) {
+    const ext = getFileExtension(filename);
+    const labels = {
+        'nii': 'NIfTI 格式',
+        'nii.gz': 'NIfTI Gzip 压缩格式',
+        'dcm': 'DICOM 医学影像格式',
+        'png': 'PNG 图像格式',
+        'jpg': 'JPEG 图像格式',
+        'jpeg': 'JPEG 图像格式'
+    };
+    return labels[ext] || '未知格式';
+}
+
+function clearFile() {
+    document.getElementById('ct_file').value = '';
+    selectedFile = null;
+    document.getElementById('upload-placeholder').style.display = 'block';
+    document.getElementById('file-preview').style.display = 'none';
+    document.getElementById('file-error').style.display = 'none';
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function updateUploadHint() {
+    const bodyPart = document.getElementById('body_part').value;
+    const hintDiv = document.getElementById('upload-hint');
+    const hintText = document.getElementById('hint-text');
+
+    const hints = {
+        '头部': '头部 CT 通常为横断面切片，建议上传完整的三维 NIfTI 文件以获得最佳分析效果',
+        '胸部': '胸部 CT 建议包含肺窗和纵隔窗的完整扫描数据',
+        '腹部': '腹部 CT 建议包含平扫和增强期的完整数据',
+        '脊椎': '脊椎 CT 建议包含完整的椎体扫描',
+        '全身': '全身 CT 会需要较长的处理时间，请耐心等待'
+    };
+
+    if (bodyPart && hints[bodyPart]) {
+        hintText.textContent = hints[bodyPart];
+        hintDiv.style.display = 'block';
+    } else {
+        hintDiv.style.display = 'none';
+    }
+}
+
+document.getElementById('upload-form').addEventListener('submit', function(e) {
+    const file = document.getElementById('ct_file').files[0];
+    if (!file) {
+        e.preventDefault();
+        showFileError('请选择要上传的文件');
+        return;
+    }
+
+    if (!validateFile(file)) {
+        e.preventDefault();
+        return;
+    }
+
+    const bodyPart = document.querySelector('select[name="body_part"]').value;
+    if (!bodyPart) {
+        e.preventDefault();
+        alert('请选择检查部位');
+        return;
+    }
+
+    document.getElementById('upload-progress').style.display = 'block';
+    document.getElementById('submit-btn').disabled = true;
+    document.getElementById('submit-btn').innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> 上传中...';
+    lucide.createIcons();
+
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 90) progress = 90;
+        document.getElementById('progress-fill').style.width = progress + '%';
+        document.getElementById('progress-text').textContent = '上传中... ' + Math.round(progress) + '%';
+    }, 300);
+
+    setTimeout(() => {
+        clearInterval(interval);
+        document.getElementById('progress-fill').style.width = '100%';
+        document.getElementById('progress-text').textContent = '处理中...';
+    }, 2000);
+});
+
+const dropZone = document.getElementById('drop-zone');
+if (dropZone) {
+    dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#165DFF';
+        this.style.backgroundColor = '#E8F3FF';
+    });
+
+    dropZone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#E5E7EB';
+        this.style.backgroundColor = '#FAFAFA';
+    });
+
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#E5E7EB';
+        this.style.backgroundColor = '#FAFAFA';
+
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            const fileInput = document.getElementById('ct_file');
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            fileInput.files = dt.files;
+            handleFileSelect(fileInput);
+        }
+    });
+}
+</script>
+{% endblock %}

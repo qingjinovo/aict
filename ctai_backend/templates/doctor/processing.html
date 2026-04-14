@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}AI 智能分割处理中 - SAM-Med3D{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center px-4" style="background-color: #F5F7FA;">
+    <div class="w-full max-w-2xl">
+        <div class="bg-white rounded-lg p-6 sm:p-12" style="border: 1px solid #E5E7EB;">
+            <div class="flex justify-center mb-6 sm:mb-8">
+                <div class="relative">
+                    <i data-lucide="loader-2" class="w-12 h-12 sm:w-16 sm:h-16 animate-spin" style="color: #165DFF;"></i>
+                </div>
+            </div>
+
+            <h1 class="text-center mb-4" style="font-size: clamp(20px, 4vw, 24px); font-weight: 600; color: #030213;">
+                AI 智能分割处理中
+            </h1>
+
+            <p class="text-center mb-6 sm:mb-8" style="font-size: clamp(14px, 3vw, 16px); color: #717182;">
+                SAM-Med3D 正在分析影像...
+            </p>
+
+            <div class="mb-6">
+                <div class="w-full h-3 rounded-full overflow-hidden" style="background-color: #F5F7FA;">
+                    <div id="progress-fill" class="h-full transition-all duration-300" style="width: 0%; background-color: #165DFF;"></div>
+                </div>
+                <p id="progress-text" class="text-center mt-3" style="font-size: 14px; color: #717182;">0%</p>
+            </div>
+
+            <div class="p-4 rounded-lg" style="background-color: #E8F3FF;">
+                <h3 class="mb-2" style="font-size: 14px; font-weight: 600; color: #165DFF;">
+                    SAM-Med3D 技术说明
+                </h3>
+                <ul class="space-y-1" style="font-size: clamp(11px, 2.5vw, 12px); color: #717182; line-height: 1.6;">
+                    <li>• 基于 Segment Anything Model 医学影像 3D 版本</li>
+                    <li>• 自动识别器官、组织和潜在病灶区域</li>
+                    <li>• 生成高精度 3D 分割掩码，辅助医生诊断</li>
+                    <li>• 处理完成后，医生可进一步精修标注</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let progress = 0;
+    const stages = ['正在上传影像数据', 'SAM-Med3D 正在分析影像', '正在进行 3D 自动分割标注', '即将完成'];
+    let currentStageIndex = 0;
+
+    function updateProgress() {
+        if (progress < 100) {
+            progress += Math.random() * 12;
+            if (progress > 100) progress = 100;
+
+            document.getElementById('progress-fill').style.width = progress + '%';
+            document.getElementById('progress-text').textContent = Math.round(progress) + '%';
+
+            const newStageIndex = Math.min(Math.floor(progress / 25), stages.length - 1);
+            if (newStageIndex > currentStageIndex) {
+                currentStageIndex = newStageIndex;
+            }
+
+            setTimeout(updateProgress, 400 + Math.random() * 600);
+        } else {
+            setTimeout(function() {
+                window.location.href = '{{ url_for("doctor.annotate", report_id=ct_image.id) }}';
+            }, 500);
+        }
+    }
+
+    setTimeout(updateProgress, 500);
+</script>
+{% endblock %}

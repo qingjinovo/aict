@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}登录 - SAM-Med3D{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12" style="background-color: #F5F7FA;">
+    <div class="w-full max-w-md">
+        <button
+            onclick="window.location.href='{{ url_for('auth.role_selection') }}'"
+            class="flex items-center gap-2 mb-6 sm:mb-8 hover:opacity-70 active:opacity-50"
+            style="color: #717182; font-size: 14px; background: none; border: none; cursor: pointer;">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            返回角色选择
+        </button>
+
+        <div class="bg-white rounded-lg p-6 sm:p-8" style="border: 1px solid #E5E7EB;">
+            <h1 class="text-center mb-6 sm:mb-8" style="font-size: clamp(20px, 4vw, 24px); font-weight: 600; color: #030213;">
+                登录系统
+            </h1>
+
+            <div id="login-error" class="mb-4 p-3 rounded-lg" style="background-color: #F53F3F; color: white; display: none; font-size: 14px;"></div>
+
+            <div class="flex mb-6 sm:mb-8" style="border-bottom: 2px solid #E5E7EB;">
+                <button
+                    id="tab-doctor"
+                    onclick="switchTab('doctor')"
+                    class="flex-1 pb-3 transition-colors active:opacity-70"
+                    style="font-size: clamp(14px, 3vw, 16px); font-weight: 600; color: #165DFF; background: none; border: none; cursor: pointer; border-bottom: 2px solid #165DFF; margin-bottom: -2px;">
+                    医生登录
+                </button>
+                <button
+                    id="tab-patient"
+                    onclick="switchTab('patient')"
+                    class="flex-1 pb-3 transition-colors active:opacity-70"
+                    style="font-size: clamp(14px, 3vw, 16px); font-weight: 400; color: #717182; background: none; border: none; cursor: pointer; border-bottom: none; margin-bottom: -2px;">
+                    患者登录
+                </button>
+            </div>
+
+            <form id="doctor-form" onsubmit="return handleDoctorLogin(event)">
+                <div class="space-y-5 sm:space-y-6">
+                    <div>
+                        <label class="block mb-2" style="font-size: 14px; color: #030213;">
+                            医生工号
+                        </label>
+                        <input
+                            type="text"
+                            id="doctor-employee-id"
+                            placeholder="请输入医生工号"
+                            class="w-full px-4 py-3 rounded-lg outline-none"
+                            style="background-color: #F5F7FA; border: 1px solid #E5E7EB; font-size: 14px;"
+                            value="D001"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label class="block mb-2" style="font-size: 14px; color: #030213;">
+                            登录密码
+                        </label>
+                        <input
+                            type="password"
+                            id="doctor-password"
+                            placeholder="请输入登录密码"
+                            class="w-full px-4 py-3 rounded-lg outline-none"
+                            style="background-color: #F5F7FA; border: 1px solid #E5E7EB; font-size: 14px;"
+                            value="doctor123"
+                            required
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        id="doctor-submit-btn"
+                        class="w-full py-3 rounded-lg active:opacity-80"
+                        style="background-color: #165DFF; color: #FFFFFF; border: none; cursor: pointer; font-size: 16px; font-weight: 600;">
+                        登录
+                    </button>
+                </div>
+            </form>
+
+            <form id="patient-form" onsubmit="return handlePatientLogin(event)" style="display: none;">
+                <div class="space-y-5 sm:space-y-6">
+                    <div>
+                        <label class="block mb-2" style="font-size: 14px; color: #030213;">
+                            手机号码
+                        </label>
+                        <input
+                            type="tel"
+                            id="patient-phone"
+                            placeholder="请输入手机号码"
+                            class="w-full px-4 py-3 rounded-lg outline-none"
+                            style="background-color: #F5F7FA; border: 1px solid #E5E7EB; font-size: 14px;"
+                            value="13900000001"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label class="block mb-2" style="font-size: 14px; color: #030213;">
+                            验证码
+                        </label>
+                        <div class="flex gap-3">
+                            <input
+                                type="text"
+                                id="patient-verify-code"
+                                placeholder="请输入验证码"
+                                class="flex-1 px-4 py-3 rounded-lg outline-none"
+                                style="background-color: #F5F7FA; border: 1px solid #E5E7EB; font-size: 14px;"
+                                value="123456"
+                                required
+                            />
+                            <button
+                                type="button"
+                                onclick="sendCode(this)"
+                                class="px-4 sm:px-6 py-3 rounded-lg whitespace-nowrap active:opacity-70"
+                                style="background-color: #F5F7FA; border: 1px solid #E5E7EB; color: #165DFF; cursor: pointer; font-size: 14px;">
+                                获取验证码
+                            </button>
+                        </div>
+                    </div>
+                    <button
+                        type="submit"
+                        id="patient-submit-btn"
+                        class="w-full py-3 rounded-lg active:opacity-80"
+                        style="background-color: #165DFF; color: #FFFFFF; border: none; cursor: pointer; font-size: 16px; font-weight: 600;">
+                        登录
+                    </button>
+                </div>
+            </form>
+
+            <p class="text-center mt-6" style="font-size: 12px; color: #717182;">
+                账号由医院统一开通，如有问题请联系管理员
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    function switchTab(tab) {
+        const doctorTab = document.getElementById('tab-doctor');
+        const patientTab = document.getElementById('tab-patient');
+        const doctorForm = document.getElementById('doctor-form');
+        const patientForm = document.getElementById('patient-form');
+
+        if (tab === 'doctor') {
+            doctorTab.style.fontWeight = '600';
+            doctorTab.style.color = '#165DFF';
+            doctorTab.style.borderBottom = '2px solid #165DFF';
+            doctorTab.style.marginBottom = '-2px';
+
+            patientTab.style.fontWeight = '400';
+            patientTab.style.color = '#717182';
+            patientTab.style.borderBottom = 'none';
+
+            doctorForm.style.display = 'block';
+            patientForm.style.display = 'none';
+        } else {
+            patientTab.style.fontWeight = '600';
+            patientTab.style.color = '#165DFF';
+            patientTab.style.borderBottom = '2px solid #165DFF';
+            patientTab.style.marginBottom = '-2px';
+
+            doctorTab.style.fontWeight = '400';
+            doctorTab.style.color = '#717182';
+            doctorTab.style.borderBottom = 'none';
+
+            doctorForm.style.display = 'none';
+            patientForm.style.display = 'block';
+        }
+
+        hideError();
+    }
+
+    function sendCode(btn) {
+        btn.textContent = '已发送';
+        btn.disabled = true;
+        btn.style.backgroundColor = '#E5E7EB';
+        btn.style.color = '#717182';
+
+        setTimeout(() => {
+            btn.textContent = '获取验证码';
+            btn.disabled = false;
+            btn.style.backgroundColor = '#F5F7FA';
+            btn.style.color = '#165DFF';
+        }, 60000);
+    }
+
+    function showError(message) {
+        const errorEl = document.getElementById('login-error');
+        errorEl.textContent = message;
+        errorEl.style.display = 'block';
+    }
+
+    function hideError() {
+        const errorEl = document.getElementById('login-error');
+        errorEl.style.display = 'none';
+    }
+
+    function setButtonLoading(button, loading) {
+        if (loading) {
+            button.disabled = true;
+            button.textContent = '登录中...';
+            button.style.opacity = '0.7';
+        } else {
+            button.disabled = false;
+            button.textContent = '登录';
+            button.style.opacity = '1';
+        }
+    }
+
+    async function handleDoctorLogin(event) {
+        event.preventDefault();
+
+        const employeeId = document.getElementById('doctor-employee-id').value;
+        const password = document.getElementById('doctor-password').value;
+        const submitBtn = document.getElementById('doctor-submit-btn');
+
+        hideError();
+        setButtonLoading(submitBtn, true);
+
+        try {
+            const response = await API.Auth.loginDoctor(employeeId, password);
+
+            if (response.success) {
+                window.location.href = '/doctor/dashboard';
+            } else {
+                showError(response.error || '登录失败');
+            }
+        } catch (e) {
+            showError(e.message || '登录失败，请稍后重试');
+        } finally {
+            setButtonLoading(submitBtn, false);
+        }
+
+        return false;
+    }
+
+    async function handlePatientLogin(event) {
+        event.preventDefault();
+
+        const phone = document.getElementById('patient-phone').value;
+        const verifyCode = document.getElementById('patient-verify-code').value;
+        const submitBtn = document.getElementById('patient-submit-btn');
+
+        hideError();
+        setButtonLoading(submitBtn, true);
+
+        try {
+            const response = await API.Auth.loginPatient(phone, verifyCode);
+
+            if (response.success) {
+                window.location.href = '/patient/dashboard';
+            } else {
+                showError(response.error || '登录失败');
+            }
+        } catch (e) {
+            showError(e.message || '登录失败，请稍后重试');
+        } finally {
+            setButtonLoading(submitBtn, false);
+        }
+
+        return false;
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const role = urlParams.get('role') || 'doctor';
+    switchTab(role);
+</script>
+{% endblock %}

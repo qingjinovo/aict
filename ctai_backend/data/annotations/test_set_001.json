@@ -1,0 +1,61 @@
+{
+  "annotation_set_id": "test_set_001",
+  "study_instance_uid": null,
+  "series_instance_uid": null,
+  "annotations": [
+    {
+      "annotation_id": "anno_0092f719e92b",
+      "graphic_type": "polygon",
+      "category": "lesion",
+      "label": "测试结节",
+      "description": "",
+      "severity": "medium",
+      "workflow_status": "preliminary",
+      "created_at": "2026-04-14T13:09:28.011776",
+      "modified_at": null,
+      "ct_image_id": null,
+      "graphic_data": {
+        "type": "polygon",
+        "points": [
+          {
+            "x": 100,
+            "y": 200
+          },
+          {
+            "x": 150,
+            "y": 180
+          },
+          {
+            "x": 180,
+            "y": 220
+          }
+        ],
+        "slice_index": 50
+      },
+      "visual_attributes": {
+        "fill_color": [
+          255,
+          230,
+          109,
+          100
+        ],
+        "stroke_color": [
+          255,
+          230,
+          109,
+          255
+        ],
+        "stroke_width": 2,
+        "visible": true,
+        "opacity": 0.5
+      }
+    }
+  ],
+  "created_by": null,
+  "created_at": "2026-04-14T13:09:28.011961",
+  "modified_at": "2026-04-14T13:09:28.011979",
+  "name": "",
+  "description": "",
+  "version": 1,
+  "annotation_count": 1
+}

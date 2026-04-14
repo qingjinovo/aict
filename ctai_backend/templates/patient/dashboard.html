@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}患者端 - SAM-Med3D{% endblock %}
+
+{% block body %}
+<div class="min-h-screen" style="background-color: #F5F7FA;">
+    <div class="page-header">
+        <div class="container">
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex-1 min-w-0">
+                    <h1 class="mb-1 text-responsive-lg font-semibold" style="color: #165DFF;">
+                        SAM-Med3D 患者端
+                    </h1>
+                    <p class="truncate text-responsive-sm" style="color: #717182;">查看您的检查报告和医生留言</p>
+                </div>
+
+                <div class="flex items-center gap-2 sm:gap-4">
+                    <button class="relative p-2 rounded-lg hover:bg-gray-100" onclick="toggleNotifications()">
+                        <i data-lucide="bell" class="w-5 h-5" style="color: #717182;"></i>
+                        {% if unread_notifications %}
+                        <span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full" style="background-color: #F53F3F;"></span>
+                        {% endif %}
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: #E8F3FF;">
+                            <i data-lucide="user" class="w-4 h-4" style="color: #165DFF;"></i>
+                        </div>
+                        <div class="hidden sm:block">
+                            <p class="text-responsive-sm font-medium" style="color: #030213;">{{ current_user.full_name }}</p>
+                            <p class="text-xs" style="color: #717182;">{{ current_user.phone or '' }}</p>
+                        </div>
+                    </div>
+                    <button
+                        onclick="showLogoutModal()"
+                        class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all hover:bg-gray-100 text-responsive-sm"
+                        style="color: #717182; background: none; border: none; cursor: pointer;"
+                    >
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">退出</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-content">
+        <div class="container">
+            {% if reports %}
+            {% set latest_report = reports[0] %}
+            <div class="mb-5 sm:mb-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-responsive-base font-semibold" style="color: #030213;">
+                        最新报告
+                    </h2>
+                    {% if latest_report.status == 'completed' %}
+                    <span class="px-2.5 py-1 rounded-full text-xs" style="background-color: #FFF3E8; color: #FF7D00;">
+                        有新消息
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div
+                    class="bg-white rounded-xl p-4 sm:p-5 cursor-pointer hover:shadow-md transition-all active:opacity-80"
+                    style="border: 2px solid #165DFF;"
+                    onclick="window.location.href='{{ url_for('patient.report', report_id=latest_report.id) }}'"
+                >
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div class="flex gap-3 sm:gap-4 flex-1 w-full sm:w-auto">
+                            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: #E8F3FF;">
+                                <i data-lucide="file-text" class="w-7 h-7 sm:w-8 sm:h-8" style="color: #165DFF;"></i>
+                            </div>
+
+                            <div class="flex-1 min-w-0">
+                                <h3 class="mb-1.5 text-responsive-base font-semibold" style="color: #030213;">
+                                    {{ latest_report.body_part or 'CT' }} CT 检查报告
+                                </h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-responsive-xs" style="color: #717182;">
+                                    <div class="flex items-center gap-1.5">
+                                        <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                                        <span class="truncate">检查日期：{{ latest_report.created_at|format_datetime if latest_report.created_at else '未知' }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                                        <span class="truncate">诊断医生：{{ latest_report.doctor.full_name if latest_report.doctor else '待分配' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 self-end sm:self-auto">
+                            <i data-lucide="chevron-right" class="sm:hidden" style="color: #717182;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div>
+                <h2 class="mb-3 text-responsive-base font-semibold" style="color: #030213;">
+                    历史报告
+                </h2>
+
+                {% if reports and reports|length > 1 %}
+                <div class="space-y-2.5">
+                    {% for report in reports[1:] %}
+                    <div
+                        class="bg-white rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 cursor-pointer hover:shadow-sm transition-all active:opacity-80"
+                        style="border: 1px solid #E5E7EB;"
+                        onclick="window.location.href='{{ url_for('patient.report', report_id=report.id) }}'"
+                    >
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: #F5F7FA;">
+                                <i data-lucide="file-text" class="w-5 h-5 sm:w-6 sm:h-6" style="color: #717182;"></i>
+                            </div>
+
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-responsive-sm font-medium" style="color: #030213; margin-bottom: 2px;">
+                                    {{ report.body_part or 'CT' }} CT 检查报告
+                                </h3>
+                                <div class="flex flex-col sm:flex-row sm:gap-3 gap-0.5 text-responsive-xs" style="color: #717182;">
+                                    <span class="truncate">检查日期：{{ report.created_at|format_datetime if report.created_at else '未知' }}</span>
+                                    <span class="hidden sm:inline">·</span>
+                                    <span class="truncate">医生：{{ report.doctor.full_name if report.doctor else '待分配' }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 self-end sm:self-auto">
+                            <span class="px-2.5 py-1 rounded text-xs" style="background-color: #F5F7FA; color: #717182; font-size: 11px;">
+                                {{ '已完成' if report.status == 'completed' else '处理中' }}
+                            </span>
+                            <i data-lucide="chevron-right" class="w-4 h-4 flex-shrink-0" style="color: #717182;"></i>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% elif reports %}
+                <div style="text-align: center; padding: 40px 20px;">
+                    <i data-lucide="folder-open" class="w-12 h-12" style="color: #717182; margin-bottom: 12px;"></i>
+                    <p style="font-size: 14px; color: #717182;">暂无其他报告</p>
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 40px 20px;">
+                    <i data-lucide="folder-open" class="w-12 h-12" style="color: #717182; margin-bottom: 12px;"></i>
+                    <p style="font-size: 14px; color: #717182;">暂无检查报告</p>
+                    <p style="font-size: 13px; color: #717182; margin-top: 6px;">请前往医院进行检查</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="mt-5 sm:mt-6 p-4 sm:p-5 rounded-lg" style="background-color: #E8F3FF; border: 1px solid #165DFF;">
+                <h3 class="mb-2 text-responsive-sm font-semibold" style="color: #165DFF;">
+                    温馨提示
+                </h3>
+                <ul class="space-y-1.5 text-responsive-xs" style="color: #717182; line-height: 1.6;">
+                    <li>• 报告由 SAM-Med3D AI 辅助医生完成分割标注，确保诊断准确性</li>
+                    <li>• 请仔细阅读医生留言中的诊疗建议</li>
+                    <li>• 如有疑问，请及时联系主治医生或前往医院咨询</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <button
+        onclick="window.location.href='{{ url_for('patient.upload') }}'"
+        class="fab fab-primary"
+        title="上传CT图像"
+    >
+        <i data-lucide="plus" class="w-5 h-5 sm:w-6 sm:h-6" style="color: #FFFFFF;"></i>
+    </button>
+</div>
+
+<div id="notification-panel" class="fixed top-0 right-0 w-80 sm:w-96 h-full bg-white shadow-lg" style="display: none; z-index: 50;">
+    <div class="p-4 flex justify-between items-center" style="border-bottom: 1px solid #E5E7EB;">
+        <h3 class="text-responsive-base font-semibold" style="color: #030213;">通知</h3>
+        <button onclick="toggleNotifications()" class="p-1.5 rounded-lg hover:bg-gray-100">
+            <i data-lucide="x" class="w-5 h-5" style="color: #717182;"></i>
+        </button>
+    </div>
+    <div style="overflow-y: auto; height: calc(100% - 60px);">
+        {% for notification in unread_notifications %}
+        <div class="p-4" style="border-bottom: 1px solid #E5E7EB;">
+            <p class="text-responsive-sm font-medium" style="color: #030213; margin-bottom: 4px;">{{ notification.title }}</p>
+            <p class="text-responsive-xs" style="color: #717182;">{{ notification.content }}</p>
+            <p class="text-responsive-xs" style="color: #717182; margin-top: 6px;">{{ notification.created_at|format_datetime if notification.created_at else '' }}</p>
+        </div>
+        {% else %}
+        <div style="padding: 40px 16px; text-align: center;">
+            <i data-lucide="bell-off" class="w-10 h-10" style="color: #717182; margin-bottom: 10px;"></i>
+            <p class="text-responsive-sm" style="color: #717182;">暂无新通知</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    function toggleNotifications() {
+        const panel = document.getElementById('notification-panel');
+        if (panel.style.display === 'none') {
+            panel.style.display = 'block';
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

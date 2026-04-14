@@ -1,0 +1,52 @@
+# SAM-Med3D Conda 环境配置
+# 使用方法: conda env create -f environment.yml
+
+name: sammed3d
+
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.10
+  - pytorch>=2.0.0
+  - torchvision
+  - torchaudio
+  - cudatoolkit=11.8
+  - numpy>=1.24.0
+  - scipy
+  - scikit-learn
+  - pandas
+  - SimpleITK>=2.2.0
+  - pip
+
+  # 医学影像处理
+  - pip:
+    - torchio>=0.19.0
+    - medim>=0.4.0
+    - nibabel
+    - nilearn
+    - pyradiomics
+    - edt
+
+    # SAM-Med3D 相关
+    - git+https://github.com/yehtetkyawkyaw/SAM-Med3D.git
+
+    # 分割模型
+    - segment-anything@git+https://github.com/facebookresearch/segment-anything.git
+
+    # 其他依赖
+    - matplotlib
+    - opencv-python-headless
+    - tqdm
+    -einops
+    - timm
+    - pyyaml
+    - hydra-core
+    - omegaconf
+
+variables:
+  SAM3D_MODEL_PATH: D:/Study/Project/JSJDS/demo/Model/best-epoch224-loss0.7188.pth
+  SAM3D_CODE_PATH: D:/Study/Github/SAM-Med3D

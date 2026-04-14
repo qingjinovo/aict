@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}联系我们 - SAM-Med3D{% endblock %}
+
+{% block body %}
+<div class="min-h-screen" style="background-color: #F5F7FA;">
+    <div class="page-header">
+        <div class="container">
+            <div class="flex items-center justify-between">
+                <div class="min-w-0" style="flex: 1;">
+                    <h1 class="text-responsive-lg" style="font-weight: 600; color: #030213; line-height: 1.3;">联系我们</h1>
+                    <p class="text-responsive-sm" style="color: #717182; margin-top: 4px;">获取医疗帮助</p>
+                </div>
+                <button onclick="window.location.href='{{ url_for('patient.dashboard') }}'" class="btn btn-secondary flex-shrink-0" style="padding: 8px 12px;">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    <span class="hidden md:inline">返回</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-content">
+        <div class="container">
+            <div class="grid gap-4 sm:gap-6" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); max-width: 900px; margin: 0 auto;">
+                <div class="card">
+                    <div class="text-center" style="padding: clamp(16px, 4vw, 24px);">
+                        <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style="background-color: #E8F3FF;">
+                            <i data-lucide="phone" class="w-8 h-8" style="color: #165DFF;"></i>
+                        </div>
+                        <h3 class="text-responsive-base mb-2" style="font-weight: 600; color: #030213;">电话咨询</h3>
+                        <p class="text-responsive-sm mb-3" style="color: #717182;">工作时间：周一至周五 8:00-17:00</p>
+                        <p class="text-responsive-lg" style="font-weight: 600; color: #165DFF;">400-888-8888</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="text-center" style="padding: clamp(16px, 4vw, 24px);">
+                        <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style="background-color: #E8F7F0;">
+                            <i data-lucide="mail" class="w-8 h-8" style="color: #00B42A;"></i>
+                        </div>
+                        <h3 class="text-responsive-base mb-2" style="font-weight: 600; color: #030213;">邮箱联系</h3>
+                        <p class="text-responsive-sm mb-3" style="color: #717182;">工作日24小时内回复</p>
+                        <p class="text-responsive-base" style="font-weight: 500; color: #165DFF;">service@sammed3d.com</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="text-center" style="padding: clamp(16px, 4vw, 24px);">
+                        <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style="background-color: #FFF3E8;">
+                            <i data-lucide="map-pin" class="w-8 h-8" style="color: #FF7D00;"></i>
+                        </div>
+                        <h3 class="text-responsive-base mb-2" style="font-weight: 600; color: #030213;">医院地址</h3>
+                        <p class="text-responsive-sm mb-3" style="color: #717182;">门诊及住院探视时间</p>
+                        <p class="text-responsive-sm" style="font-weight: 500; color: #030213;">北京市朝阳区望京街道 888号</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-6" style="max-width: 900px; margin: clamp(16px, 4vw, 24px) auto 0;">
+                <h3 class="card-title mb-4">在线留言</h3>
+                <form>
+                    <div class="grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));">
+                        <div class="form-group">
+                            <label class="form-label">您的姓名</label>
+                            <input type="text" class="input" placeholder="请输入姓名" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">联系电话</label>
+                            <input type="tel" class="input" placeholder="请输入联系电话" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">留言内容</label>
+                        <textarea class="input" rows="4" placeholder="请输入留言内容..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                        提交留言
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

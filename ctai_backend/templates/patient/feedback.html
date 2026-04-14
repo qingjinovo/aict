@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}服务反馈 - SAM-Med3D{% endblock %}
+
+{% block body %}
+<div class="min-h-screen" style="background-color: #F5F7FA;">
+    <div class="page-header">
+        <div class="container">
+            <div class="flex items-center justify-between">
+                <div class="min-w-0" style="flex: 1;">
+                    <h1 class="text-responsive-lg" style="font-weight: 600; color: #030213; line-height: 1.3;">服务反馈</h1>
+                    <p class="text-responsive-sm" style="color: #717182; margin-top: 4px;">感谢您的宝贵意见</p>
+                </div>
+                <button onclick="window.history.back()" class="btn btn-secondary flex-shrink-0" style="padding: 8px 12px;">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    <span class="hidden md:inline">返回</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-content">
+        <div class="container">
+            <div class="card" style="max-width: 600px; margin: 0 auto;">
+                <h3 class="card-title mb-6">对本次服务评分</h3>
+
+                <form method="POST">
+                    <div class="form-group">
+                        <label class="form-label">总体评分</label>
+                        <div id="rating-stars" class="flex" style="gap: clamp(4px, 1vw, 8px); font-size: clamp(24px, 6vw, 32px);">
+                            <span class="star" data-rating="1" style="color: #E5E7EB; cursor: pointer; touch-action: manipulation;">★</span>
+                            <span class="star" data-rating="2" style="color: #E5E7EB; cursor: pointer; touch-action: manipulation;">★</span>
+                            <span class="star" data-rating="3" style="color: #E5E7EB; cursor: pointer; touch-action: manipulation;">★</span>
+                            <span class="star" data-rating="4" style="color: #E5E7EB; cursor: pointer; touch-action: manipulation;">★</span>
+                            <span class="star" data-rating="5" style="color: #E5E7EB; cursor: pointer; touch-action: manipulation;">★</span>
+                        </div>
+                        <input type="hidden" name="rating" id="rating-value" value="5" />
+                        <p id="rating-text" class="text-responsive-base" style="color: #717182; margin-top: 8px;">非常满意</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">服务评价</label>
+                        <textarea name="feedback" class="input" rows="5" placeholder="请描述您的就诊体验，我们会做得更好..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">上传图片（可选）</label>
+                        <div style="border: 2px dashed #E5E7EB; border-radius: 8px; padding: clamp(20px, 5vw, 30px); text-align: center; cursor: pointer; touch-action: manipulation;">
+                            <i data-lucide="image" class="w-8 h-8 sm:w-10 sm:h-10" style="color: #717182; margin-bottom: 8px;"></i>
+                            <p class="text-responsive-base" style="color: #717182;">点击上传图片</p>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        提交反馈
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentRating = 5;
+    const ratingTexts = ['', '非常不满意', '不满意', '一般', '满意', '非常满意'];
+
+    document.querySelectorAll('.star').forEach(star => {
+        star.addEventListener('click', function() {
+            currentRating = parseInt(this.dataset.rating);
+            updateStars();
+        });
+
+        star.addEventListener('mouseenter', function() {
+            const rating = parseInt(this.dataset.rating);
+            highlightStars(rating);
+        });
+
+        star.addEventListener('mouseleave', function() {
+            highlightStars(currentRating);
+        });
+    });
+
+    function updateStars() {
+        document.querySelectorAll('.star').forEach(star => {
+            const rating = parseInt(star.dataset.rating);
+            star.style.color = rating <= currentRating ? '#FF7D00' : '#E5E7EB';
+        });
+        document.getElementById('rating-value').value = currentRating;
+        document.getElementById('rating-text').textContent = ratingTexts[currentRating];
+    }
+
+    function highlightStars(rating) {
+        document.querySelectorAll('.star').forEach(star => {
+            const starRating = parseInt(star.dataset.rating);
+            star.style.color = starRating <= rating ? '#FF7D00' : '#E5E7EB';
+        });
+    }
+
+    updateStars();
+</script>
+{% endblock %}

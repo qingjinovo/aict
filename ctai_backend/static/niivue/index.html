@@ -449,15 +449,15 @@
         }
         try {
           const filename = 'annotation_' + (ctImageId || Date.now()) + '.nii';
-          await nv.saveImage({ filename: filename, isSaveDrawing: true });
+          const drawingData = nv.getDrawingData ? nv.getDrawingData() : null;
           notifyParent('niivue-saved', {
             filename: filename,
             success: true,
+            drawingData: drawingData,
             penType: currentPenType,
             color: currentColor,
             penValue: currentPenValue
           });
-          alert('标注已保存: ' + filename);
         } catch (err) {
           console.error('Save failed:', err);
           notifyParent('niivue-error', { error: err.message });

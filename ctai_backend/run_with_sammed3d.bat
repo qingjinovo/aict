@@ -37,7 +37,7 @@ python --version
 echo.
 
 REM 设置环境变量
-set SAM3D_MODEL_PATH=D:\Study\Project\JSJDS\demo\Model\best-epoch224-loss0.7188.pth
+set SAM3D_MODEL_PATH=D:\Study\Project\JSJDS\demo\Model\sam_med3d_turbo.pth
 set SAM3D_CODE_PATH=D:\Study\Github\SAM-Med3D
 
 echo [信息] SAM3D 模型路径: %SAM3D_MODEL_PATH%

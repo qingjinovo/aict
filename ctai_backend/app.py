@@ -56,6 +56,23 @@ def create_app(config_name='default'):
                 return f"{size / (1024 * 1024):.1f} MB"
         return '0 B'
 
+    @app.template_filter('to_web_path')
+    def to_web_path(file_path):
+        if not file_path:
+            return ''
+        path = file_path.replace('\\', '/')
+        static_prefix = 'D:/Study/Project/JSJDS/demo/ctai_backend/static'
+        if static_prefix in path:
+            path = path.replace(static_prefix, '')
+        if not path.startswith('/'):
+            path = '/' + path
+        if not path.startswith('/static/'):
+            if path.startswith('/uploads/'):
+                path = '/static' + path
+            else:
+                path = '/static/' + path.lstrip('/')
+        return path
+
     @app.context_processor
     def inject_utilities():
         return {

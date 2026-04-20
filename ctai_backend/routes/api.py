@@ -282,3 +282,113 @@ def save_annotation_file(image_id):
         'message': 'Annotation file path saved',
         'annotation_file_path': annotation_file_path
     })
+
+def require_auth(f):
+    """自定义认证装饰器，返回JSON错误而不是重定向"""
+    from functools import wraps
+    from flask import request, jsonify
+    from flask_login import current_user
+
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return jsonify({'success': False, 'error': '请先登录'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+@api_bp.route('/ct-images/<int:image_id>/ai-annotate', methods=['POST'])
+@require_auth
+def run_ai_annotation(image_id):
+    """触发AI标注流程"""
+    import logging
+    logger = logging.getLogger(__name__)
+
+    ct_image = CTImage.query.get_or_404(image_id)
+
+    if ct_image.doctor_id and ct_image.doctor_id != current_user.id:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+    logger.info(f"Starting AI annotation for ct_image {image_id}")
+    logger.info(f"CT image path: {ct_image.file_path}")
+    logger.info(f"Annotation path: {ct_image.annotation_file_path}")
+
+    from services.sam3d_service import get_sam3d_service
+
+    service = get_sam3d_service()
+    logger.info("get_sam3d_service() returned")
+
+    use_gt_annotation = False
+    if ct_image.annotation_file_path and os.path.exists(ct_image.annotation_file_path):
+        logger.info("Annotation file exists, will use it as ground truth")
+        use_gt_annotation = True
+    else:
+        logger.warning("Annotation file does not exist, will use center-point inference")
+        if not ct_image.annotation_file_path:
+            logger.warning("No annotation_file_path in database")
+        else:
+            logger.warning(f"File does not exist at: {ct_image.annotation_file_path}")
+
+    try:
+        logger.info("About to call service.infer() or infer_simple()")
+        try:
+            if use_gt_annotation:
+                result = service.infer(
+                    img_path=ct_image.file_path,
+                    gt_path=ct_image.annotation_file_path,
+                    num_clicks=1
+                )
+            else:
+                logger.info("Using infer_simple (center point mode)")
+                result = service.infer_simple(
+                    img_path=ct_image.file_path
+                )
+        except Exception as infer_e:
+            logger.error(f"service.infer() threw exception: {infer_e}")
+            raise
+        logger.info(f"Inference result type: {type(result)}")
+        logger.info(f"Inference result keys: {result.keys() if isinstance(result, dict) else 'not a dict'}")
+        logger.info(f"Inference result: {result}")
+
+        if result.get('success') and result.get('output_path'):
+            ct_image.ai_annotation_file_path = result['output_path']
+            ct_image.status = 'ai_annotated'
+            db.session.commit()
+
+            ProgressService.create_progress_record(
+                ct_image_id=image_id,
+                stage='ai_annotation_completed',
+                message='AI标注完成'
+            )
+
+            return jsonify({
+                'success': True,
+                'message': 'AI标注完成',
+                'ai_annotation_path': result['output_path']
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('error', 'AI标注失败')
+            }), 500
+
+    except Exception as e:
+        import traceback
+        print(f'[API] AI annotation error: {e}')
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@api_bp.route('/ct-images/<int:image_id>/ai-annotate/status', methods=['GET'])
+@login_required
+def get_ai_annotation_status(image_id):
+    """获取AI标注状态"""
+    ct_image = CTImage.query.get_or_404(image_id)
+
+    return jsonify({
+        'success': True,
+        'has_ai_annotation': bool(ct_image.ai_annotation_file_path),
+        'ai_annotation_path': ct_image.ai_annotation_file_path,
+        'status': ct_image.status
+    })

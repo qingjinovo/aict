@@ -79,27 +79,68 @@ def confirm(report_id):
     ct_image = CTImage.query.get_or_404(report_id)
 
     if request.method == 'POST':
-        ct_image.final_report = request.form.get('final_report', '')
-        ct_image.final_diagnosis = request.form.get('final_diagnosis', '')
-        ct_image.status = 'completed'
-        ct_image.confirmed_by_doctor_id = current_user.id
-        ct_image.confirmed_at = db.func.now()
+        action = request.form.get('action')
 
-        ProgressService.complete_processing(report_id)
+        if action == 'ai_annotate':
+            if not ct_image.annotation_file_path:
+                flash('请先保存标注', 'warning')
+                return redirect(url_for('doctor.confirm', report_id=report_id))
 
-        NotificationService.create_notification(
-            user_id=ct_image.patient_id,
-            title='报告已完成',
-            content=f'您的CT检查报告已完成，医生已给出最终诊断',
-            notification_type='report_completed',
-            related_ct_image_id=report_id
-        )
+            from services.sam3d_service import get_sam3d_service
+            service = get_sam3d_service()
 
-        flash('报告已确认提交', 'success')
-        return redirect(url_for('doctor.dashboard'))
+            try:
+                result = service.infer(
+                    img_path=ct_image.file_path,
+                    gt_path=ct_image.annotation_file_path,
+                    num_clicks=1
+                )
 
+                if result.get('success') and result.get('output_path'):
+                    ct_image.ai_annotation_file_path = result['output_path']
+                    ct_image.status = 'ai_annotated'
+                    db.session.commit()
+
+                    ProgressService.create_progress_record(
+                        ct_image_id=report_id,
+                        stage='ai_annotation_completed',
+                        message='AI标注完成'
+                    )
+
+                    flash('AI标注完成，请查看AI标注结果后撰写报告', 'success')
+                else:
+                    flash(f'AI标注失败: {result.get("error", "未知错误")}', 'error')
+            except Exception as e:
+                import logging
+                logging.exception('AI annotation error')
+                flash(f'AI标注出错: {str(e)}', 'error')
+
+            return redirect(url_for('doctor.confirm', report_id=report_id))
+
+        elif action == 'submit_report':
+            ct_image.final_report = request.form.get('final_report', '')
+            ct_image.final_diagnosis = request.form.get('final_diagnosis', '')
+            ct_image.status = 'completed'
+            ct_image.confirmed_by_doctor_id = current_user.id
+            ct_image.confirmed_at = db.func.now()
+
+            ProgressService.complete_processing(report_id)
+
+            NotificationService.create_notification(
+                user_id=ct_image.patient_id,
+                title='报告已完成',
+                content=f'您的CT检查报告已完成，医生已给出最终诊断',
+                notification_type='report_completed',
+                related_ct_image_id=report_id
+            )
+
+            flash('报告已确认提交', 'success')
+            return redirect(url_for('doctor.dashboard'))
+
+    progress_info = ProgressService.get_ct_progress(report_id)
     return render_template('doctor/confirm.html',
-                         ct_image=ct_image)
+                         ct_image=ct_image,
+                         progress_info=progress_info)
 
 @doctor_bp.route('/doctor/message/<int:message_id>')
 @login_required

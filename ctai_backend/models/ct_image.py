@@ -29,6 +29,7 @@ class CTImage(db.Model):
     confirmed_at = db.Column(db.DateTime)
 
     annotation_file_path = db.Column(db.String(500))
+    ai_annotation_file_path = db.Column(db.String(500))
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -57,6 +58,7 @@ class CTImage(db.Model):
             'confirmed_by_doctor_id': self.confirmed_by_doctor_id,
             'confirmed_at': self.confirmed_at.isoformat() if self.confirmed_at else None,
             'annotation_file_path': self.annotation_file_path,
+            'ai_annotation_file_path': self.ai_annotation_file_path,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

@@ -228,16 +228,16 @@
                     </div>
 
                     <p class="text-center mb-2" style="font-size: 12px; color: #717182;">
-                        确认后将生成正式报告并同步给患者
+                        保存标注后，提交至AI进行智能分割
                     </p>
                     <button
                         id="confirm-report-btn"
-                        onclick="confirmReport()"
+                        onclick="submitToAI()"
                         class="w-full flex items-center justify-center gap-2 rounded-lg active:opacity-80"
                         style="background-color: #165DFF; color: #FFFFFF; font-size: 16px; font-weight: 600; height: 56px; border: none; cursor: pointer;">
-                        <i data-lucide="check" class="w-5 h-5"></i>
-                        <span class="hidden sm:inline">确认标注结果 · 生成正式报告</span>
-                        <span class="sm:hidden">确认标注结果</span>
+                        <i data-lucide="sparkles" class="w-5 h-5"></i>
+                        <span class="hidden sm:inline">提交至AI分割</span>
+                        <span class="sm:hidden">提交至AI分割</span>
                     </button>
                 </div>
             </div>
@@ -323,25 +323,29 @@ async function saveAnnotationToServer(filename, drawingData) {
 function showSaveSuccess(message) {
     const status = document.getElementById('submit-status');
     const statusText = document.getElementById('submit-status-text');
+    if (!status || !statusText) return;
     status.style.display = 'block';
     status.style.backgroundColor = '#E8F3FF';
     status.style.borderColor = '#165DFF';
-    status.querySelector('i').style.color = '#165DFF';
+    const icon = status.querySelector('i');
+    if (icon) icon.style.color = '#165DFF';
     statusText.style.color = '#165DFF';
     statusText.textContent = message;
-    setTimeout(() => { status.style.display = 'none'; }, 3000);
+    setTimeout(() => { if (status) status.style.display = 'none'; }, 3000);
 }
 
 function showSaveError(message) {
     const status = document.getElementById('submit-status');
     const statusText = document.getElementById('submit-status-text');
+    if (!status || !statusText) return;
     status.style.display = 'block';
     status.style.backgroundColor = '#FFF2E8';
     status.style.borderColor = '#F53F3F';
-    status.querySelector('i').style.color = '#F53F3F';
+    const icon = status.querySelector('i');
+    if (icon) icon.style.color = '#F53F3F';
     statusText.style.color = '#F53F3F';
     statusText.textContent = message;
-    setTimeout(() => { status.style.display = 'none'; }, 3000);
+    setTimeout(() => { if (status) status.style.display = 'none'; }, 3000);
 }
 
 function triggerNiivueSave() {
@@ -351,40 +355,137 @@ function triggerNiivueSave() {
     }
 }
 
-async function confirmReport() {
-    const diagnosisText = document.getElementById('diagnosis-text').value;
+async function submitToAI() {
     const btn = document.getElementById('confirm-report-btn');
 
+    if (!confirm('确定要提交至AI分割吗？AI将基于您的标注进行智能分析。')) {
+        return;
+    }
+
     btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> 提交中...';
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> AI正在分割图像...';
     lucide.createIcons();
 
+    showStatus('正在保存医生标注...', 'info');
+
+    triggerNiivueSave();
+}
+
+async function saveAnnotationToServer(filename, drawingData) {
     try {
-        const response = await fetch('/doctor/confirm/' + CT_IMAGE_ID, {
+        const formData = new FormData();
+        formData.append('annotation_filename', filename);
+        formData.append('saved_at', new Date().toISOString());
+        if (drawingData) {
+            formData.append('drawing_data', JSON.stringify(drawingData));
+        }
+
+        const token = window.authManager?.getToken() || '';
+        const response = await fetch('/api/ct-images/' + CT_IMAGE_ID + '/annotation', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': 'Bearer ' + (window.authManager?.getToken() || '')
+                'Authorization': 'Bearer ' + token
             },
-            body: new URLSearchParams({
-                final_report: diagnosisText,
-                final_diagnosis: diagnosisText
-            })
+            body: formData
         });
-
-        if (response.redirected || response.ok) {
-            alert('报告已确认提交！');
-            window.location.href = '/doctor/dashboard';
+        const result = await response.json();
+        if (result.success) {
+            console.log('Annotation saved to server:', result);
+            showStatus('标注已保存，正在提交至AI分割...', 'info');
+            submitToAIAnnotation();
         } else {
-            throw new Error('提交失败');
+            showSaveError(result.error || '保存失败');
+            resetButton();
         }
     } catch (error) {
-        console.error('Confirm report error:', error);
-        alert('提交失败: ' + error.message);
-        btn.disabled = false;
-        btn.innerHTML = '<i data-lucide="check" class="w-5 h-5"></i> 确认标注结果 · 生成正式报告';
-        lucide.createIcons();
+        console.error('Failed to save annotation reference:', error);
+        showSaveError('网络错误，请重试');
+        resetButton();
     }
+}
+
+async function submitToAIAnnotation() {
+    const btn = document.getElementById('confirm-report-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> AI正在分割图像...';
+    lucide.createIcons();
+
+    showStatus('AI正在分割图像，请稍候...', 'info');
+
+    try {
+        const token = window.authManager?.getToken() || '';
+        console.log('Submitting to AI with token:', token ? 'present' : 'missing');
+
+        const response = await fetch('/api/ct-images/' + CT_IMAGE_ID + '/ai-annotate', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        console.log('AI annotation response status:', response.status);
+        console.log('AI annotation response headers:', response.headers.get('content-type'));
+
+        const text = await response.text();
+        console.log('AI annotation response text:', text.substring(0, 200));
+
+        let result;
+        try {
+            result = JSON.parse(text);
+        } catch (e) {
+            throw new Error('服务器返回格式错误: ' + text.substring(0, 100));
+        }
+
+        if (response.ok && result.success) {
+            showStatus('AI标注完成，正在跳转到确认页面...', 'success');
+            setTimeout(() => {
+                window.location.href = '/doctor/confirm/' + CT_IMAGE_ID;
+            }, 1500);
+        } else {
+            showSaveError(result.error || 'AI标注失败');
+            resetButton();
+        }
+    } catch (error) {
+        console.error('AI annotation error:', error);
+        showSaveError('AI标注失败: ' + error.message);
+        resetButton();
+    }
+}
+
+function showStatus(message, type) {
+    const status = document.getElementById('submit-status');
+    const statusText = document.getElementById('submit-status-text');
+    if (!status || !statusText) return;
+
+    status.style.display = 'block';
+    statusText.textContent = message;
+
+    if (type === 'success') {
+        status.style.backgroundColor = '#E8F5E9';
+        status.style.borderColor = '#4CAF50';
+        statusText.style.color = '#4CAF50';
+    } else if (type === 'error') {
+        status.style.backgroundColor = '#FFF2E8';
+        status.style.borderColor = '#F53F3F';
+        statusText.style.color = '#F53F3F';
+    } else {
+        status.style.backgroundColor = '#E8F3FF';
+        status.style.borderColor = '#165DFF';
+        statusText.style.color = '#165DFF';
+    }
+
+    const icon = status.querySelector('i');
+    if (icon) {
+        icon.classList.add('animate-spin');
+    }
+}
+
+function resetButton() {
+    const btn = document.getElementById('confirm-report-btn');
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="sparkles" class="w-5 h-5"></i> 提交至AI分割';
+    lucide.createIcons();
 }
 </script>
 {% endblock %}

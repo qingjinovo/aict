@@ -14,15 +14,33 @@ from datetime import datetime
 from typing import Optional, Dict, Any, List, Tuple
 
 import numpy as np
-import torch
-import SimpleITK as sitk
-import torchio as tio
+
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    torch = None
+
+try:
+    import SimpleITK as sitk
+    SIMPLEITK_AVAILABLE = True
+except ImportError:
+    SIMPLEITK_AVAILABLE = False
+    sitk = None
+
+try:
+    import torchio as tio
+    TORCHIO_AVAILABLE = True
+except ImportError:
+    TORCHIO_AVAILABLE = False
+    tio = None
 
 logger = logging.getLogger(__name__)
 
 MODEL_CHECKPOINT_PATH = os.environ.get(
     'SAM3D_MODEL_PATH',
-    'D:/Study/Project/JSJDS/demo/Model/best-epoch224-loss0.7188.pth'
+    'D:/Study/Project/JSJDS/demo/Model/sam_med3d_turbo.pth'
 )
 
 SAM3D_CODE_PATH = os.environ.get(
@@ -63,27 +81,46 @@ class SAM3DInferenceService:
 
             sys.path.insert(0, self.code_path)
 
-            from segment_anything import build_sam3D
-            from medim import create_model
+            from segment_anything import build_sam3D, sam_model_registry3D
 
             try:
-                self.model = create_model('SAM-Med3D', pretrained=True, checkpoint_path=self.checkpoint_path)
+                checkpoint = torch.load(self.checkpoint_path, map_location='cpu')
+                if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+                    checkpoint = checkpoint['model_state_dict']
+
+                embed_dim = None
+                if 'image_encoder.patch_embed.proj.weight' in checkpoint:
+                    weight_shape = checkpoint['image_encoder.patch_embed.proj.weight'].shape
+                    embed_dim = weight_shape[0]
+                    print(f'Detected embed_dim from checkpoint: {embed_dim}')
+
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pth')
+                torch.save(checkpoint, temp_file.name)
+                temp_file.close()
+
+                if embed_dim == 768:
+                    print('Using build_sam3D_vit_b_ori (embed_dim=768)')
+                    self.model = sam_model_registry3D["vit_b_ori"](checkpoint=temp_file.name)
+                elif embed_dim == 384:
+                    print('Using build_sam3D_vit_b (embed_dim=384)')
+                    self.model = build_sam3D(checkpoint=temp_file.name)
+                elif embed_dim == 1280:
+                    print('Using build_sam3D_vit_h (embed_dim=1280)')
+                    self.model = build_sam3D(checkpoint=temp_file.name)
+                else:
+                    print(f'Unknown embed_dim {embed_dim}, trying default build_sam3D')
+                    self.model = build_sam3D(checkpoint=temp_file.name)
+
                 self.model = self.model.to(self.device)
                 self.model.eval()
-                logger.info('SAM-Med3D 模型加载成功')
+                os.unlink(temp_file.name)
+                print('SAM-Med3D 模型加载成功')
                 return True
             except Exception as e:
-                logger.warning(f'MedIM 模型加载失败: {e}，尝试备用方法')
-                try:
-                    checkpoint = torch.load(self.checkpoint_path, map_location=self.device)
-                    self.model = build_sam3D(checkpoint=checkpoint)
-                    self.model = self.model.to(self.device)
-                    self.model.eval()
-                    logger.info('SAM-Med3D 模型加载成功 (备用方法)')
-                    return True
-                except Exception as e2:
-                    logger.error(f'备用方法也失败: {e2}')
-                    return False
+                print(f'SAM-Med3D 模型加载失败: {e}')
+                import traceback
+                print(traceback.format_exc())
+                return False
 
         except Exception as e:
             logger.error(f'SAM3D 模型初始化失败: {e}')
@@ -193,86 +230,121 @@ class SAM3DInferenceService:
 
         self.model.eval()
         device = self.device
+        logger.info(f"_sam_model_infer: roi_image shape={roi_image.shape}, roi_gt shape={roi_gt.shape if roi_gt is not None else None}, num_clicks={num_clicks}")
 
         if roi_gt is not None and (roi_gt == 0).all() and num_clicks > 0:
+            print("_sam_model_infer: GT is all zeros, returning empty mask")
             return np.zeros_like(roi_image.cpu().numpy().squeeze()), None
 
-        with torch.no_grad():
-            input_tensor = roi_image.to(device)
-            image_embeddings = self.model.image_encoder(input_tensor)
+        try:
+            with torch.no_grad():
+                input_tensor = roi_image.to(device)
+                print("_sam_model_infer: Running image_encoder")
+                try:
+                    image_embeddings = self.model.image_encoder(input_tensor)
+                except Exception as e:
+                    print(f"_sam_model_infer: image_encoder failed: {e}")
+                    raise
+                print(f"_sam_model_infer: image_embeddings type: {type(image_embeddings)}")
 
-            points_coords = torch.zeros(1, 0, 3).to(device)
-            points_labels = torch.zeros(1, 0).to(device)
-            new_points_co = torch.Tensor([[[64, 64, 64]]]).to(device)
-            new_points_la = torch.Tensor([[1]]).to(torch.int64)
+                points_coords = torch.zeros(1, 0, 3).to(device)
+                points_labels = torch.zeros(1, 0).to(device)
+                new_points_co = torch.Tensor([[[64, 64, 64]]]).to(device)
+                new_points_la = torch.Tensor([[1]]).to(torch.int64)
 
-            current_prev_mask = torch.zeros_like(roi_image, device=device)[:, 0, ...]
+                current_prev_mask = torch.zeros_like(roi_image, device=device)[:, 0, ...]
 
-            if prev_low_res_mask is None:
-                prev_low_res_mask = torch.zeros(
-                    1, 1,
-                    roi_image.shape[2] // 4,
-                    roi_image.shape[3] // 4,
-                    roi_image.shape[4] // 4,
-                    device=device,
-                    dtype=torch.float
-                )
-
-            for _ in range(num_clicks):
-                if roi_gt is not None:
-                    new_points_co, new_points_la = self._random_sample_next_click(
-                        current_prev_mask.squeeze(0).cpu(),
-                        roi_gt[0, 0].cpu()
+                if prev_low_res_mask is None:
+                    prev_low_res_mask = torch.zeros(
+                        1, 1,
+                        roi_image.shape[2] // 4,
+                        roi_image.shape[3] // 4,
+                        roi_image.shape[4] // 4,
+                        device=device,
+                        dtype=torch.float
                     )
-                    new_points_co = new_points_co.to(device)
-                    new_points_la = new_points_la.to(device)
-                else:
-                    if points_coords.shape[1] == 0:
-                        center_z = roi_image.shape[2] // 2
-                        center_y = roi_image.shape[3] // 2
-                        center_x = roi_image.shape[4] // 2
-                        new_points_co = torch.tensor([[[center_x, center_y, center_z]]], device=device, dtype=torch.float)
-                        new_points_la = torch.tensor([[1]], device=device, dtype=torch.int64)
+
+                for click_idx in range(num_clicks):
+                    print(f"_sam_model_infer: Processing click {click_idx+1}/{num_clicks}")
+                    if roi_gt is not None:
+                        print("_sam_model_infer: Sampling next click from GT")
+                        try:
+                            new_points_co, new_points_la = self._random_sample_next_click(
+                                current_prev_mask.squeeze(0).cpu(),
+                                roi_gt[0, 0].cpu()
+                            )
+                        except Exception as e:
+                            print(f"_sam_model_infer: _random_sample_next_click failed: {e}")
+                            raise
+                        new_points_co = new_points_co.to(device)
+                        new_points_la = new_points_la.to(device)
                     else:
-                        break
+                        if points_coords.shape[1] == 0:
+                            center_z = roi_image.shape[2] // 2
+                            center_y = roi_image.shape[3] // 2
+                            center_x = roi_image.shape[4] // 2
+                            new_points_co = torch.tensor([[[center_x, center_y, center_z]]], device=device, dtype=torch.float)
+                            new_points_la = torch.tensor([[1]], device=device, dtype=torch.int64)
+                        else:
+                            break
 
-                points_coords = torch.cat([points_coords, new_points_co], dim=1)
-                points_labels = torch.cat([points_labels, new_points_la], dim=1)
+                    points_coords = torch.cat([points_coords, new_points_co], dim=1)
+                    points_labels = torch.cat([points_labels, new_points_la], dim=1)
 
-                sparse_embeddings, dense_embeddings = self.model.prompt_encoder(
-                    points=[points_coords, points_labels],
-                    boxes=None,
-                    masks=prev_low_res_mask,
-                )
+                    print("_sam_model_infer: Running prompt_encoder")
+                    try:
+                        sparse_embeddings, dense_embeddings = self.model.prompt_encoder(
+                            points=[points_coords, points_labels],
+                            boxes=None,
+                            masks=prev_low_res_mask,
+                        )
+                    except Exception as e:
+                        print(f"_sam_model_infer: prompt_encoder failed: {e}")
+                        raise
+                    print("_sam_model_infer: Running mask_decoder")
+                    try:
+                        low_res_masks, _ = self.model.mask_decoder(
+                            image_embeddings=image_embeddings,
+                            image_pe=self.model.prompt_encoder.get_dense_pe(),
+                            sparse_prompt_embeddings=sparse_embeddings,
+                            dense_prompt_embeddings=dense_embeddings,
+                            multimask_output=False,
+                        )
+                    except Exception as e:
+                        print(f"_sam_model_infer: mask_decoder failed: {e}")
+                        raise
+                    print(f"_sam_model_infer: mask_decoder output shape: {low_res_masks.shape}")
+                    prev_low_res_mask = low_res_masks.detach()
 
-                low_res_masks, _ = self.model.mask_decoder(
-                    image_embeddings=image_embeddings,
-                    image_pe=self.model.prompt_encoder.get_dense_pe(),
-                    sparse_prompt_embeddings=sparse_embeddings,
-                    dense_prompt_embeddings=dense_embeddings,
-                )
-                prev_low_res_mask = low_res_masks.detach()
+                    print("_sam_model_infer: Interpolating mask")
+                    current_prev_mask = torch.nn.functional.interpolate(
+                        low_res_masks,
+                        size=roi_image.shape[-3:],
+                        mode='trilinear',
+                        align_corners=False
+                    )
+                    current_prev_mask = torch.sigmoid(current_prev_mask) > 0.5
 
-                current_prev_mask = torch.nn.functional.interpolate(
+                print("_sam_model_infer: Final interpolation")
+                final_masks_hr = torch.nn.functional.interpolate(
                     low_res_masks,
                     size=roi_image.shape[-3:],
                     mode='trilinear',
                     align_corners=False
                 )
-                current_prev_mask = torch.sigmoid(current_prev_mask) > 0.5
 
-            final_masks_hr = torch.nn.functional.interpolate(
-                low_res_masks,
-                size=roi_image.shape[-3:],
-                mode='trilinear',
-                align_corners=False
-            )
+            print("_sam_model_infer: Computing sigmoid and thresholding")
+            medsam_seg_prob = torch.sigmoid(final_masks_hr)
+            medsam_seg_prob = medsam_seg_prob.cpu().numpy().squeeze()
+            medsam_seg_mask = (medsam_seg_prob > 0.5).astype(np.uint8)
+            print(f"_sam_model_infer: Final mask shape: {medsam_seg_mask.shape}")
 
-        medsam_seg_prob = torch.sigmoid(final_masks_hr)
-        medsam_seg_prob = medsam_seg_prob.cpu().numpy().squeeze()
-        medsam_seg_mask = (medsam_seg_prob > 0.5).astype(np.uint8)
-
-        return medsam_seg_mask, low_res_masks.detach()
+            return medsam_seg_mask, low_res_masks.detach()
+        except Exception as e:
+            import traceback
+            print(f'_sam_model_infer exception: {e}')
+            print(traceback.format_exc())
+            raise
 
     def _read_nifti(self, nii_path: str, get_meta_info: bool = False):
         """读取 NIfTI 文件"""
@@ -331,31 +403,38 @@ class SAM3DInferenceService:
 
     def _data_preprocess(self, subject, meta_info, category_index, target_spacing=(1.5, 1.5, 1.5), crop_size=128):
         """数据预处理"""
+        logger.info(f"_data_preprocess: category_index={category_index}, target_spacing={target_spacing}, crop_size={crop_size}")
         label_data_for_cat = subject.label.data.clone()
         new_label_data = torch.zeros_like(label_data_for_cat)
         new_label_data[label_data_for_cat == category_index] = 1
         subject.label.set_data(new_label_data)
+        logger.info(f"_data_preprocess: label shape: {subject.label.data.shape}")
 
         meta_info["original_subject_affine"] = subject.image.affine.copy()
         meta_info["original_subject_spatial_shape"] = subject.image.spatial_shape
 
+        logger.info("_data_preprocess: Resampling...")
         resampler = tio.Resample(target=target_spacing)
         subject_resampled = resampler(subject)
 
+        logger.info("_data_preprocess: Converting to canonical...")
         transform_canonical = tio.ToCanonical()
         subject_canonical = transform_canonical(subject_resampled)
 
+        logger.info("_data_preprocess: Cropping/padding...")
         crop_transform = tio.CropOrPad(mask_name='label', target_shape=(crop_size, crop_size, crop_size))
         norm_transform = tio.ZNormalization(masking_method=lambda x: x > 0)
 
         roi_image, roi_label, meta_info = self._get_roi(
             subject_canonical, meta_info, crop_transform, norm_transform
         )
+        logger.info(f"_data_preprocess: Complete - roi_image: {roi_image.shape}, roi_label: {roi_label.shape}")
 
         return roi_image, roi_label, meta_info
 
     def _data_postprocess(self, roi_pred_numpy: np.ndarray, meta_info: dict) -> np.ndarray:
         """后处理，将 ROI 预测映射回原始空间"""
+        logger.info(f"_data_postprocess: input shape: {roi_pred_numpy.shape}")
         roi_pred_tensor = torch.from_numpy(roi_pred_numpy.astype(np.float32)).unsqueeze(0)
 
         pred_label_map_roi_space = tio.LabelMap(
@@ -364,12 +443,14 @@ class SAM3DInferenceService:
         )
 
         reference_tensor_shape = (1, *meta_info["original_subject_spatial_shape"])
+        logger.info(f"_data_postprocess: original spatial shape: {meta_info['original_subject_spatial_shape']}")
 
         reference_image_original_space = tio.ScalarImage(
             tensor=torch.zeros(reference_tensor_shape),
             affine=meta_info["original_subject_affine"]
         )
 
+        logger.info("_data_postprocess: Resampling to original space...")
         resampler_to_original_grid = tio.Resample(
             target=reference_image_original_space,
             image_interpolation='nearest'
@@ -433,6 +514,10 @@ class SAM3DInferenceService:
         torch.manual_seed(seed)
         np.random.seed(seed)
 
+        def log(msg):
+            print(f"[SAM3D] {msg}")
+            logger.info(msg)
+
         if output_path is None:
             output_dir = os.path.join(os.path.dirname(img_path), 'pred')
             os.makedirs(output_dir, exist_ok=True)
@@ -440,65 +525,129 @@ class SAM3DInferenceService:
             output_path = os.path.join(output_dir, basename)
 
         try:
+            log(f"Step 1: Checking model initialization")
             if self.model is None:
-                if not self.setup():
+                log("Model is None, calling setup()")
+                setup_result = self.setup()
+                log(f"setup() returned: {setup_result}")
+                if not setup_result:
                     return {
                         'success': False,
                         'error': '模型初始化失败',
                         'output_path': None
                     }
+                log("Model setup complete")
 
-            exist_categories, final_pred_numpy_original_grid = self._get_category_list_and_zero_mask(gt_path or img_path)
-            _, gt_meta_for_saving = self._read_nifti(gt_path or img_path, get_meta_info=True)
+            log(f"Step 2: Getting category list from {gt_path or img_path}")
+            try:
+                exist_categories, final_pred_numpy_original_grid = self._get_category_list_and_zero_mask(gt_path or img_path)
+            except Exception as e:
+                print(f'[SAM3D] Step 2 failed: {e}')
+                raise
+            log(f"Found categories: {exist_categories}")
 
-            subject = tio.Subject(
-                image=tio.ScalarImage(img_path),
-                label=tio.LabelMap(gt_path) if gt_path else tio.ScalarImage(img_path)
-            )
+            log(f"Step 3: Reading metadata from {gt_path or img_path}")
+            try:
+                _, gt_meta_for_saving = self._read_nifti(gt_path or img_path, get_meta_info=True)
+            except Exception as e:
+                print(f'[SAM3D] Step 3 failed: {e}')
+                raise
+            log(f"Metadata read successfully")
+
+            log(f"Step 4: Creating TorchIO Subject")
+            try:
+                subject = tio.Subject(
+                    image=tio.ScalarImage(img_path),
+                    label=tio.LabelMap(gt_path) if gt_path else tio.ScalarImage(img_path)
+                )
+            except Exception as e:
+                print(f'[SAM3D] Step 4 failed creating TorchIO Subject: {e}')
+                raise
+            log("TorchIO Subject created successfully")
+
+            log(f"Step 5: Reading sitk image (this reads the file 4 times - inefficient!)")
+            try:
+                sitk_image = sitk.ReadImage(img_path)
+            except Exception as e:
+                print(f'[SAM3D] Step 5 failed reading sitk image: {e}')
+                raise
             meta_info = {
-                "sitk_image_object": sitk.ReadImage(img_path),
-                "sitk_origin": sitk.ReadImage(img_path).GetOrigin(),
-                "sitk_direction": sitk.ReadImage(img_path).GetDirection(),
-                "sitk_spacing": sitk.ReadImage(img_path).GetSpacing(),
-                "original_numpy_shape": sitk.GetArrayFromImage(sitk.ReadImage(img_path)).shape,
+                "sitk_image_object": sitk_image,
+                "sitk_origin": sitk_image.GetOrigin(),
+                "sitk_direction": sitk_image.GetDirection(),
+                "sitk_spacing": sitk_image.GetSpacing(),
+                "original_numpy_shape": sitk.GetArrayFromImage(sitk_image).shape,
             }
+            log(f"sitk spacing: {sitk_image.GetSpacing()}, shape: {sitk.GetArrayFromImage(sitk_image).shape}")
 
             if gt_path:
-                subject.label = tio.LabelMap(gt_path)
-                _, meta_for_gt = self._read_nifti(gt_path, get_meta_info=True)
-                meta_info.update({
-                    "original_subject_affine": meta_for_gt["sitk_image_object"].GetOrigin(),
-                    "original_subject_spatial_shape": sitk.GetArrayFromImage(sitk.ReadImage(gt_path)).shape,
-                })
+                log(f"Step 6: Reading gt_path: {gt_path}")
+                try:
+                    subject.label = tio.LabelMap(gt_path)
+                    gt_sitk_image = sitk.ReadImage(gt_path)
+                    _, meta_for_gt = self._read_nifti(gt_path, get_meta_info=True)
+                    meta_info.update({
+                        "original_subject_affine": gt_sitk_image.GetOrigin(),
+                        "original_subject_spatial_shape": sitk.GetArrayFromImage(gt_sitk_image).shape,
+                    })
+                except Exception as e:
+                    print(f'[SAM3D] Step 6 failed: {e}')
+                    raise
+                log(f"GT spatial shape: {sitk.GetArrayFromImage(gt_sitk_image).shape}")
             else:
                 meta_info.update({
                     "original_subject_affine": meta_info["sitk_image_object"].GetOrigin(),
                     "original_subject_spatial_shape": meta_info["original_numpy_shape"],
                 })
 
-            for category_index in exist_categories if exist_categories else [1]:
+            log(f"Step 7: Processing {len(exist_categories) if exist_categories else 1} categories")
+            for idx, category_index in enumerate(exist_categories if exist_categories else [1]):
+                log(f"  Processing category {idx+1}/{len(exist_categories) if exist_categories else 1}: index={category_index}")
                 category_specific_subject = subject
                 category_specific_meta_info = meta_info.copy()
 
-                roi_image, roi_label, meta_info = self._data_preprocess(
-                    category_specific_subject,
-                    category_specific_meta_info,
-                    category_index=category_index,
-                    target_spacing=target_spacing,
-                    crop_size=crop_size
-                )
+                log(f"  Step 7.{idx+1}.1: _data_preprocess")
+                try:
+                    roi_image, roi_label, meta_info = self._data_preprocess(
+                        category_specific_subject,
+                        category_specific_meta_info,
+                        category_index=category_index,
+                        target_spacing=target_spacing,
+                        crop_size=crop_size
+                    )
+                except Exception as e:
+                    print(f'[SAM3D] Step 7.{idx+1}.1 _data_preprocess failed: {e}')
+                    raise
+                log(f"  ROI image shape: {roi_image.shape}, ROI label shape: {roi_label.shape}")
 
-                roi_pred_numpy, _ = self._sam_model_infer(
-                    roi_image,
-                    roi_gt=roi_label,
-                    num_clicks=num_clicks,
-                    prev_low_res_mask=None
-                )
+                log(f"  Step 7.{idx+1}.2: _sam_model_infer")
+                try:
+                    roi_pred_numpy, _ = self._sam_model_infer(
+                        roi_image,
+                        roi_gt=roi_label,
+                        num_clicks=num_clicks,
+                        prev_low_res_mask=None
+                    )
+                except Exception as e:
+                    print(f'[SAM3D] Step 7.{idx+1}.2 _sam_model_infer failed: {e}')
+                    raise
+                log(f"  Prediction shape: {roi_pred_numpy.shape}")
 
-                cls_pred_original_grid = self._data_postprocess(roi_pred_numpy, meta_info)
+                log(f"  Step 7.{idx+1}.3: _data_postprocess")
+                try:
+                    cls_pred_original_grid = self._data_postprocess(roi_pred_numpy, meta_info)
+                except Exception as e:
+                    print(f'[SAM3D] Step 7.{idx+1}.3 _data_postprocess failed: {e}')
+                    raise
+                log(f"  Postprocessed shape: {cls_pred_original_grid.shape}")
                 final_pred_numpy_original_grid[cls_pred_original_grid == 1] = category_index
 
-            self._save_nifti(final_pred_numpy_original_grid, output_path, gt_meta_for_saving)
+            log(f"Step 8: Saving to {output_path}")
+            try:
+                self._save_nifti(final_pred_numpy_original_grid, output_path, gt_meta_for_saving)
+            except Exception as e:
+                print(f'[SAM3D] Step 8 _save_nifti failed: {e}')
+                raise
 
             return {
                 'success': True,
@@ -509,7 +658,9 @@ class SAM3DInferenceService:
             }
 
         except Exception as e:
-            logger.exception(f'SAM3D 推理失败: {e}')
+            import traceback
+            print(f'[SAM3D] Exception: {e}')
+            print(traceback.format_exc())
             return {
                 'success': False,
                 'error': str(e),
@@ -557,9 +708,11 @@ class SAM3DInferenceService:
             crop_size = 128
             target_spacing = (1.5, 1.5, 1.5)
 
+            print(f"infer_simple: arr shape before processing: {arr.shape}")
             subject = tio.Subject(
-                image=tio.ScalarImage(tensor=torch.from_numpy(arr).unsqueeze(0).unsqueeze(0).float(), affine=np.eye(4))
+                image=tio.ScalarImage(tensor=torch.from_numpy(arr).unsqueeze(0).float(), affine=np.eye(4))
             )
+            print(f"infer_simple: subject created, image shape: {subject.image.data.shape}")
 
             resampler = tio.Resample(target=target_spacing)
             subject_resampled = resampler(subject)
@@ -568,11 +721,24 @@ class SAM3DInferenceService:
             subject_canonical = transform_canonical(subject_resampled)
 
             crop_transform = tio.CropOrPad(target_shape=(crop_size, crop_size, crop_size))
-            norm_transform = tio.ZNormalization(masking_method=lambda x: x > 0)
 
-            subject_canonical.image.data = norm_transform(subject_canonical.image.data.squeeze(dim=1)).unsqueeze(dim=1)
+            print(f"infer_simple: before crop, image data shape: {subject_canonical.image.data.shape}")
+            subject_cropped = crop_transform(subject_canonical)
+            print(f"infer_simple: after crop, image data shape: {subject_cropped.image.data.shape}")
 
-            roi_image = subject_canonical.image.data.clone().detach().unsqueeze(0).unsqueeze(0)
+            img_data = subject_cropped.image.data.squeeze(0)
+            print(f"infer_simple: img_data shape after squeeze: {img_data.shape}")
+
+            mask = img_data > 0
+            mean_val = img_data[mask].mean() if mask.any() else 0
+            std_val = img_data[mask].std() if mask.any() else 1
+            normalized = (img_data - mean_val) / (std_val + 1e-8)
+            normalized = normalized.clamp(-5, 5)
+
+            print(f"infer_simple: normalized shape: {normalized.shape}")
+
+            roi_image = normalized.unsqueeze(0).unsqueeze(0).float()
+            print(f"infer_simple: roi_image shape: {roi_image.shape}")
 
             if center_point is None:
                 center_point = (
@@ -614,6 +780,7 @@ class SAM3DInferenceService:
                     image_pe=self.model.prompt_encoder.get_dense_pe(),
                     sparse_prompt_embeddings=sparse_embeddings,
                     dense_prompt_embeddings=dense_embeddings,
+                    multimask_output=False,
                 )
 
                 final_masks_hr = torch.nn.functional.interpolate(

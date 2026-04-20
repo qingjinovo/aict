@@ -212,6 +212,8 @@
     async function handleDoctorLogin(event) {
         event.preventDefault();
 
+        authManager.clear();
+
         const employeeId = document.getElementById('doctor-employee-id').value;
         const password = document.getElementById('doctor-password').value;
         const submitBtn = document.getElementById('doctor-submit-btn');
@@ -238,6 +240,8 @@
 
     async function handlePatientLogin(event) {
         event.preventDefault();
+
+        authManager.clear();
 
         const phone = document.getElementById('patient-phone').value;
         const verifyCode = document.getElementById('patient-verify-code').value;

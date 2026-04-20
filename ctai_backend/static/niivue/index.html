@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NiiVue Medical Image Viewer</title>
+    <script src="https://unpkg.com/@niivue/niivue@0.68.2/dist/niivue.umd.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; overflow: hidden; font-family: Roboto, sans-serif; }
+      #container { width: 100%; height: 100%; background: #000; position: relative; }
+      canvas { display: block; width: 100%; height: 100%; }
+      .top-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%);
+      }
+      .dropdown {
+        position: relative;
+      }
+      .dropdown-btn {
+        background: white;
+        color: #333;
+        border: 1px solid #ddd;
+        padding: 8px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 90px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      }
+      .dropdown-btn:hover {
+        background: #f5f5f5;
+        border-color: #ccc;
+      }
+      .dropdown-btn.active {
+        background: #e8f0fe;
+        border-color: #165DFF;
+        color: #165DFF;
+      }
+      .dropdown-btn::after {
+        content: '▼';
+        font-size: 9px;
+        color: #999;
+        margin-left: auto;
+      }
+      .dropdown-btn.active::after {
+        color: #165DFF;
+      }
+      .dropdown-menu {
+        display: none;
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        background: white;
+        border-radius: 8px;
+        padding: 8px;
+        min-width: 160px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border: 1px solid #e0e0e0;
+      }
+      .dropdown-menu.show { display: block; }
+      .dropdown-menu button {
+        width: 100%;
+        background: white;
+        color: #333;
+        border: none;
+        padding: 10px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .dropdown-menu button:hover { background: #f5f5f5; }
+      .dropdown-menu button.selected {
+        background: #e8f0fe;
+        color: #165DFF;
+        font-weight: 500;
+      }
+      .pen-type-menu {
+        display: none;
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        background: white;
+        border-radius: 8px;
+        padding: 8px;
+        min-width: 140px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border: 1px solid #e0e0e0;
+      }
+      .pen-type-menu.show { display: block; }
+      .pen-type-menu button {
+        width: 100%;
+        background: white;
+        color: #333;
+        border: none;
+        padding: 10px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .pen-type-menu button:hover { background: #f5f5f5; }
+      .pen-type-menu button.selected {
+        background: #e8f0fe;
+        color: #165DFF;
+        font-weight: 500;
+      }
+      .color-menu {
+        display: none;
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        background: white;
+        border-radius: 8px;
+        padding: 10px;
+        min-width: 180px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border: 1px solid #e0e0e0;
+      }
+      .color-menu.show { display: block; }
+      .color-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+      }
+      .color-swatch {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .color-swatch:hover {
+        transform: scale(1.1);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      }
+      .color-swatch.selected {
+        border-color: #165DFF;
+        box-shadow: 0 0 0 2px rgba(22,93,255,0.3);
+      }
+      .save-btn {
+        background: #00B42A !important;
+        color: white !important;
+        border: none !important;
+        margin-left: auto;
+      }
+      .save-btn:hover {
+        background: #009a26 !important;
+      }
+      .dropdown-divider {
+        height: 1px;
+        background: #eee;
+        margin: 8px 0;
+      }
+      .brush-control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 0;
+      }
+      .brush-control label {
+        color: #666;
+        font-size: 12px;
+        min-width: auto;
+        margin: 0;
+        padding: 0;
+      }
+      .brush-control input[type="range"] {
+        flex: 1;
+        height: 4px;
+        cursor: pointer;
+      }
+      .brush-control span {
+        color: #333;
+        font-size: 12px;
+        min-width: 20px;
+        text-align: right;
+      }
+      .info {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        z-index: 100;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <canvas id="nv-canvas"></canvas>
+    </div>
+    <div class="top-bar">
+      <div class="dropdown">
+        <button class="dropdown-btn" id="view-btn" onclick="toggleViewMenu()">显示模式</button>
+        <div class="dropdown-menu" id="view-menu">
+          <button onclick="setSliceType('axial')" id="btn-axial">横断面</button>
+          <button onclick="setSliceType('coronal')" id="btn-coronal">冠状面</button>
+          <button onclick="setSliceType('sagittal')" id="btn-sagittal">矢状面</button>
+          <button onclick="setSliceType('multi')" id="btn-multi">多平面</button>
+          <button onclick="setSliceType('3d')" id="btn-3d">3D视图</button>
+        </div>
+      </div>
+      <div class="dropdown">
+        <button class="dropdown-btn" id="pen-type-btn" onclick="togglePenTypeMenu()">线条</button>
+        <div class="pen-type-menu" id="pen-type-menu">
+          <button onclick="selectPenType('stroke')" id="pen-type-stroke">
+            <span style="width:20px;text-align:center;">—</span> 线条
+          </button>
+          <button onclick="selectPenType('fill')" id="pen-type-fill">
+            <span style="width:20px;text-align:center;">■</span> 填充
+          </button>
+        </div>
+      </div>
+      <div class="dropdown">
+        <button class="dropdown-btn" id="color-btn" onclick="toggleColorMenu()">
+          <span id="color-indicator" style="width:18px;height:18px;background:#FF5252;border-radius:3px;display:inline-block;"></span>
+          <span id="color-name">红色</span>
+        </button>
+        <div class="color-menu" id="color-menu">
+          <div class="color-grid">
+            <div class="color-swatch selected" style="background:#FF5252;" onclick="selectColor('#FF5252', '红色', this)"></div>
+            <div class="color-swatch" style="background:#FFD740;" onclick="selectColor('#FFD740', '黄色', this)"></div>
+            <div class="color-swatch" style="background:#64FFDA;" onclick="selectColor('#64FFDA', '青色', this)"></div>
+            <div class="color-swatch" style="background:#B388FF;" onclick="selectColor('#B388FF', '紫色', this)"></div>
+            <div class="color-swatch" style="background:#FFFFFF;border:1px solid #ddd;" onclick="selectColor('#FFFFFF', '白色', this)"></div>
+            <div class="color-swatch" style="background:#4CAF50;" onclick="selectColor('#4CAF50', '绿色', this)"></div>
+            <div class="color-swatch" style="background:#FF9800;" onclick="selectColor('#FF9800', '橙色', this)"></div>
+            <div class="color-swatch" style="background:#E91E63;" onclick="selectColor('#E91E63', '粉色', this)"></div>
+            <div class="color-swatch" style="background:#00BCD4;" onclick="selectColor('#00BCD4', '天蓝', this)"></div>
+            <div class="color-swatch" style="background:#795548;" onclick="selectColor('#795548', '棕色', this)"></div>
+          </div>
+          <div class="dropdown-divider"></div>
+          <div class="brush-control">
+            <label>笔刷:</label>
+            <input type="range" id="brush-size" min="1" max="20" value="5" onchange="setBrushSize(this.value)">
+            <span id="brush-size-val">5</span>
+          </div>
+          <div class="dropdown-divider"></div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="undoDrawing()" style="flex:1;background:#FF9800 !important;color:white;border:none;padding:8px;border-radius:6px;cursor:pointer;">撤销</button>
+            <button onclick="clearDrawing()" style="flex:1;background:#F44336 !important;color:white;border:none;padding:8px;border-radius:6px;cursor:pointer;">清除</button>
+          </div>
+        </div>
+      </div>
+      <button class="dropdown-btn save-btn" onclick="saveDrawing()">保存标注</button>
+    </div>
+    <div class="info" id="info">等待加载...</div>
+
+    <script>
+      let nv = null;
+      window.isDrawingActive = false;
+      let currentPenType = 'stroke';
+      let currentColor = '#FF5252';
+      let currentColorName = '红色';
+      let currentPenValue = 1;
+      let viewMenuOpen = false;
+      let penTypeMenuOpen = false;
+      let colorMenuOpen = false;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const fileUrl = urlParams.get('file');
+      const ctImageId = urlParams.get('ctImageId');
+
+      async function init() {
+        const canvas = document.getElementById('nv-canvas');
+
+        nv = new niivue.Niivue({
+          loadingText: '加载医学影像...',
+          backColor: [0, 0, 0, 1],
+          crosshairColor: [0, 1, 1, 1],
+          show3Dcrosshair: true,
+          layout: { rows: 1, columns: 3 },
+          zoom: 1.0
+        });
+
+        nv.attachTo('nv-canvas');
+
+        let volumes = [];
+        if (fileUrl) {
+          volumes = [{ url: fileUrl }];
+        } else {
+          volumes = [{ url: './hippo.nii' }];
+        }
+
+        try {
+          await nv.loadVolumes(volumes);
+          document.getElementById('info').textContent = '影像已加载: ' + (nv.volumes[0]?.name || 'unknown');
+          notifyParent('niivue-ready', { success: true });
+        } catch (err) {
+          console.error('Failed to load volume:', err);
+          document.getElementById('info').textContent = '加载失败: ' + err.message;
+          notifyParent('niivue-error', { error: err.message });
+        }
+
+        nv.opts.onLocationChange = handleLocationChange;
+        nv.opts.onImageLoaded = handleImageLoaded;
+
+        document.addEventListener('click', handleOutsideClick);
+      }
+
+      function handleOutsideClick(e) {
+        if (viewMenuOpen && !e.target.closest('#view-btn') && !e.target.closest('#view-menu')) {
+          closeViewMenu();
+        }
+        if (penTypeMenuOpen && !e.target.closest('#pen-type-btn') && !e.target.closest('#pen-type-menu')) {
+          closePenTypeMenu();
+        }
+        if (colorMenuOpen && !e.target.closest('#color-btn') && !e.target.closest('#color-menu')) {
+          closeColorMenu();
+        }
+      }
+
+      function closeAllMenus() {
+        closeViewMenu();
+        closePenTypeMenu();
+        closeColorMenu();
+      }
+
+      function toggleViewMenu() {
+        if (viewMenuOpen) { closeViewMenu(); }
+        else { closePenTypeMenu(); closeColorMenu(); document.getElementById('view-menu').classList.add('show'); document.getElementById('view-btn').classList.add('active'); viewMenuOpen = true; }
+      }
+      function closeViewMenu() { document.getElementById('view-menu').classList.remove('show'); document.getElementById('view-btn').classList.remove('active'); viewMenuOpen = false; }
+
+      function togglePenTypeMenu() {
+        if (penTypeMenuOpen) { closePenTypeMenu(); }
+        else { closeViewMenu(); closeColorMenu(); document.getElementById('pen-type-menu').classList.add('show'); document.getElementById('pen-type-btn').classList.add('active'); penTypeMenuOpen = true; }
+      }
+      function closePenTypeMenu() { document.getElementById('pen-type-menu').classList.remove('show'); document.getElementById('pen-type-btn').classList.remove('active'); penTypeMenuOpen = false; }
+
+      function toggleColorMenu() {
+        if (colorMenuOpen) { closeColorMenu(); }
+        else { closeViewMenu(); closePenTypeMenu(); document.getElementById('color-menu').classList.add('show'); document.getElementById('color-btn').classList.add('active'); colorMenuOpen = true; }
+      }
+      function closeColorMenu() { document.getElementById('color-menu').classList.remove('show'); document.getElementById('color-btn').classList.remove('active'); colorMenuOpen = false; }
+
+      function handleLocationChange(data) {
+        if (data && data.values) {
+          document.getElementById('info').textContent = '位置: ' + JSON.stringify(data.values);
+          notifyParent('niivue-location', { values: data.values });
+        }
+      }
+
+      function handleImageLoaded() {
+        notifyParent('niivue-image-loaded', { volumeCount: nv.volumes.length });
+      }
+
+      function setSliceType(type) {
+        if (!nv) return;
+        const sliceTypes = {
+          'axial': nv.sliceTypeAxial,
+          'coronal': nv.sliceTypeCoronal,
+          'sagittal': nv.sliceTypeSagittal,
+          'multi': nv.sliceTypeMultiplanar,
+          '3d': nv.sliceTypeRender
+        };
+        nv.setSliceType(sliceTypes[type]);
+        document.querySelectorAll('#view-menu button').forEach(function(b) { b.classList.remove('selected'); });
+        document.getElementById('btn-' + type)?.classList.add('selected');
+        closeViewMenu();
+      }
+
+      function selectPenType(type) {
+        currentPenType = type;
+        document.getElementById('pen-type-btn').innerHTML = type === 'stroke' ? '线条' : '填充';
+        document.getElementById('pen-type-' + type).classList.add('selected');
+        document.getElementById('pen-type-' + (type === 'stroke' ? 'fill' : 'stroke')).classList.remove('selected');
+        updatePenValue();
+        closePenTypeMenu();
+      }
+
+      function selectColor(color, name, el) {
+        currentColor = color;
+        currentColorName = name;
+        document.getElementById('color-indicator').style.background = color;
+        document.getElementById('color-name').textContent = name;
+        document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+        el.classList.add('selected');
+        updatePenValue();
+        closeColorMenu();
+      }
+
+      function updatePenValue() {
+        const colorMap = {
+          '#FF5252': 1, '#FFD740': 2, '#64FFDA': 3, '#B388FF': 4,
+          '#FFFFFF': 5, '#4CAF50': 6, '#FF9800': 7, '#E91E63': 8,
+          '#00BCD4': 9, '#795548': 10
+        };
+        let penValue = colorMap[currentColor] || 1;
+        if (currentPenType === 'fill') {
+          penValue = penValue + 8;
+        }
+        currentPenValue = penValue;
+        nv.setDrawingEnabled(true);
+        window.isDrawingActive = true;
+        nv.setPenValue(penValue & 7, currentPenType === 'fill');
+        notifyParent('niivue-pen-change', { penType: currentPenType, color: currentColor, penValue: currentPenValue });
+      }
+
+      function setBrushSize(size) {
+        document.getElementById('brush-size-val').textContent = size;
+        if (nv && nv.opts) {
+          nv.opts.penWidth = parseInt(size);
+        }
+        notifyParent('niivue-brush-size', { size: parseInt(size) });
+      }
+
+      function undoDrawing() {
+        if (!nv) return;
+        nv.drawUndo();
+        notifyParent('niivue-undone', {});
+      }
+
+      function clearDrawing() {
+        if (!nv) return;
+        nv.clearDrawing();
+        document.querySelectorAll('.pen-option').forEach(b => b.classList.remove('selected'));
+        notifyParent('niivue-cleared', {});
+      }
+
+      async function saveDrawing() {
+        if (!nv || !window.isDrawingActive) {
+          alert('请先选择标注工具进行标注');
+          return;
+        }
+        try {
+          const filename = 'annotation_' + (ctImageId || Date.now()) + '.nii';
+          await nv.saveImage({ filename: filename, isSaveDrawing: true });
+          notifyParent('niivue-saved', {
+            filename: filename,
+            success: true,
+            penType: currentPenType,
+            color: currentColor,
+            penValue: currentPenValue
+          });
+          alert('标注已保存: ' + filename);
+        } catch (err) {
+          console.error('Save failed:', err);
+          notifyParent('niivue-error', { error: err.message });
+          alert('保存失败: ' + err.message);
+        }
+      }
+
+      function notifyParent(eventName, data) {
+        window.parent.postMessage({ type: eventName, detail: data }, '*');
+      }
+
+      window.saveDrawing = saveDrawing;
+      window.getNiivueInstance = () => nv;
+      window.setSliceType = setSliceType;
+      window.selectPenType = selectPenType;
+      window.selectColor = selectColor;
+      window.setBrushSize = setBrushSize;
+      window.undoDrawing = undoDrawing;
+      window.clearDrawing = clearDrawing;
+      window.isDrawingActive = false;
+
+      init().catch(err => {
+        console.error('Init error:', err);
+        document.getElementById('info').textContent = '初始化失败: ' + err.message;
+      });
+    </script>
+  </body>
+</html>

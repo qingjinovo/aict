@@ -1,7 +1,8 @@
+import os
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from models.user import User
-from models.ct_image import CTImage, Annotation
+from models.ct_image import CTImage
 from extensions import db
 from services.notification_service import NotificationService, ProgressService, MessageService
 from services.file_upload_service import FileUploadService
@@ -103,64 +104,6 @@ def get_progress(image_id):
     progress_info = ProgressService.get_ct_progress(image_id)
     return jsonify({'success': True, 'progress': progress_info})
 
-@api_bp.route('/ct-images/<int:image_id>/annotations', methods=['GET', 'POST'])
-@login_required
-def handle_annotations(image_id):
-    if request.method == 'GET':
-        annotations = Annotation.query.filter_by(ct_image_id=image_id).all()
-        return jsonify({
-            'success': True,
-            'annotations': [a.to_dict() for a in annotations]
-        })
-
-    data = request.get_json()
-    annotation = Annotation(
-        ct_image_id=image_id,
-        doctor_id=current_user.id,
-        annotation_type=data.get('annotation_type'),
-        slice_number=data.get('slice_number'),
-        coordinates_x=data.get('coordinates', {}).get('x'),
-        coordinates_y=data.get('coordinates', {}).get('y'),
-        coordinates_z=data.get('coordinates', {}).get('z'),
-        radius=data.get('radius'),
-        label=data.get('label'),
-        severity=data.get('severity'),
-        notes=data.get('notes'),
-        is_abnormal=data.get('is_abnormal', False),
-        ai_generated=data.get('ai_generated', False)
-    )
-    db.session.add(annotation)
-    db.session.commit()
-
-    return jsonify({'success': True, 'annotation': annotation.to_dict()}), 201
-
-@api_bp.route('/annotations/<int:annotation_id>', methods=['PUT', 'DELETE'])
-@login_required
-def modify_annotation(annotation_id):
-    annotation = Annotation.query.get_or_404(annotation_id)
-
-    if annotation.doctor_id != current_user.id:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-
-    if request.method == 'PUT':
-        data = request.get_json()
-        annotation.annotation_type = data.get('annotation_type', annotation.annotation_type)
-        annotation.slice_number = data.get('slice_number', annotation.slice_number)
-        annotation.coordinates_x = data.get('coordinates', {}).get('x', annotation.coordinates_x)
-        annotation.coordinates_y = data.get('coordinates', {}).get('y', annotation.coordinates_y)
-        annotation.coordinates_z = data.get('coordinates', {}).get('z', annotation.coordinates_z)
-        annotation.radius = data.get('radius', annotation.radius)
-        annotation.label = data.get('label', annotation.label)
-        annotation.severity = data.get('severity', annotation.severity)
-        annotation.notes = data.get('notes', annotation.notes)
-        annotation.is_abnormal = data.get('is_abnormal', annotation.is_abnormal)
-        db.session.commit()
-        return jsonify({'success': True, 'annotation': annotation.to_dict()})
-
-    db.session.delete(annotation)
-    db.session.commit()
-    return jsonify({'success': True})
-
 @api_bp.route('/ct-images/<int:image_id>/call-model', methods=['POST'])
 @login_required
 def call_model(image_id):
@@ -176,48 +119,11 @@ def call_model(image_id):
         ct_image.ai_model_version = result['result'].get('model_version')
         ct_image.processing_completed_at = db.func.now()
         db.session.commit()
-
-        for pred in result['result'].get('predictions', []):
-            annotation = Annotation(
-                ct_image_id=image_id,
-                doctor_id=current_user.id,
-                annotation_type='ai_prediction',
-                slice_number=pred.get('slice_number'),
-                coordinates_x=pred.get('coordinates', {}).get('x'),
-                coordinates_y=pred.get('coordinates', {}).get('y'),
-                coordinates_z=pred.get('coordinates', {}).get('z'),
-                radius=pred.get('radius'),
-                label=pred.get('label'),
-                severity=pred.get('severity'),
-                is_abnormal=True,
-                ai_generated=True
-            )
-            db.session.add(annotation)
-
-        db.session.commit()
         ProgressService.complete_processing(image_id)
     else:
         mock_result = ModelIntegrationService.generate_mock_result(image_id)
         ct_image.status = 'ai_completed'
         ct_image.ai_model_version = mock_result['result'].get('model_version')
-
-        for pred in mock_result['result'].get('predictions', []):
-            annotation = Annotation(
-                ct_image_id=image_id,
-                doctor_id=current_user.id,
-                annotation_type='ai_prediction',
-                slice_number=pred.get('slice_number'),
-                coordinates_x=pred.get('coordinates', {}).get('x'),
-                coordinates_y=pred.get('coordinates', {}).get('y'),
-                coordinates_z=pred.get('coordinates', {}).get('z'),
-                radius=pred.get('radius'),
-                label=pred.get('label'),
-                severity=pred.get('severity'),
-                is_abnormal=True,
-                ai_generated=True
-            )
-            db.session.add(annotation)
-
         db.session.commit()
         ProgressService.complete_processing(image_id)
 
@@ -290,3 +196,89 @@ def get_user(user_id):
 def get_model_info():
     info = ModelIntegrationService.get_model_info()
     return jsonify({'success': True, 'model_info': info})
+
+@api_bp.route('/ct-images/<int:image_id>/annotation', methods=['POST'])
+@login_required
+def save_annotation(image_id):
+    ct_image = CTImage.query.get_or_404(image_id)
+
+    if ct_image.doctor_id and ct_image.doctor_id != current_user.id:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+
+    annotation_filename = request.form.get('annotation_filename')
+    drawing_data = request.form.get('drawing_data')
+    saved_at = request.form.get('saved_at')
+
+    if not annotation_filename:
+        return jsonify({'success': False, 'error': 'annotation_filename is required'}), 400
+
+    annotation_dir = os.path.join(os.path.dirname(ct_image.file_path), 'annotations')
+    annotation_dir = os.path.abspath(annotation_dir)
+    os.makedirs(annotation_dir, exist_ok=True)
+
+    annotation_file_path = os.path.join(annotation_dir, annotation_filename)
+
+    ct_image.annotation_file_path = annotation_file_path
+    ct_image.status = 'doctor_annotating'
+    db.session.commit()
+
+    ProgressService.create_progress_record(
+        ct_image_id=image_id,
+        stage='annotation_saved',
+        message=f'医生保存标注: {annotation_filename}'
+    )
+
+    annotation_record = {
+        'ct_image_id': image_id,
+        'annotation_filename': annotation_filename,
+        'annotation_file_path': annotation_file_path,
+        'drawing_data': drawing_data,
+        'saved_at': saved_at,
+        'saved_by': current_user.id,
+        'doctor_name': current_user.full_name
+    }
+
+    return jsonify({
+        'success': True,
+        'message': 'Annotation saved successfully',
+        'annotation': annotation_record
+    })
+
+@api_bp.route('/ct-images/<int:image_id>/annotation', methods=['GET'])
+@login_required
+def get_annotation(image_id):
+    ct_image = CTImage.query.get_or_404(image_id)
+
+    return jsonify({
+        'success': True,
+        'annotation': {
+            'ct_image_id': image_id,
+            'annotation_file_path': ct_image.annotation_file_path,
+            'has_annotation': bool(ct_image.annotation_file_path)
+        }
+    })
+
+@api_bp.route('/ct-images/<int:image_id>/annotation-file', methods=['POST'])
+@login_required
+def save_annotation_file(image_id):
+    ct_image = CTImage.query.get_or_404(image_id)
+    data = request.get_json()
+
+    annotation_filename = data.get('annotation_filename')
+    if not annotation_filename:
+        return jsonify({'success': False, 'error': 'annotation_filename is required'}), 400
+
+    annotation_dir = os.path.join(os.path.dirname(ct_image.file_path), 'annotations')
+    annotation_dir = os.path.abspath(annotation_dir)
+    os.makedirs(annotation_dir, exist_ok=True)
+
+    annotation_file_path = os.path.join(annotation_dir, annotation_filename)
+
+    ct_image.annotation_file_path = annotation_file_path
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': 'Annotation file path saved',
+        'annotation_file_path': annotation_file_path
+    })

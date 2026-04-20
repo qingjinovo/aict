@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
 from models.user import User
-from models.ct_image import CTImage, Annotation
+from models.ct_image import CTImage
 from models.progress import Message, Notification
 from extensions import db
 from services.notification_service import NotificationService, ProgressService, MessageService
@@ -122,13 +122,11 @@ def report(report_id):
         flash('您无权查看此报告', 'error')
         return redirect(url_for('patient.dashboard'))
 
-    annotations = Annotation.query.filter_by(ct_image_id=report_id).all()
     progress_info = ProgressService.get_ct_progress(report_id)
     messages = Message.query.filter_by(ct_image_id=report_id).order_by(Message.created_at.asc()).all()
 
     return render_template('patient/report.html',
                          ct_image=ct_image,
-                         annotations=annotations,
                          progress_info=progress_info,
                          messages=messages)
 

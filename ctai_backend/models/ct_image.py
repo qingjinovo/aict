@@ -28,10 +28,11 @@ class CTImage(db.Model):
     confirmed_by_doctor_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     confirmed_at = db.Column(db.DateTime)
 
+    annotation_file_path = db.Column(db.String(500))
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    annotations = db.relationship('Annotation', backref='ct_image', lazy='dynamic')
     progress_records = db.relationship('ProgressRecord', backref='ct_image', lazy='dynamic')
     messages = db.relationship('Message', backref='ct_image', lazy='dynamic')
 
@@ -55,50 +56,7 @@ class CTImage(db.Model):
             'final_diagnosis': self.final_diagnosis,
             'confirmed_by_doctor_id': self.confirmed_by_doctor_id,
             'confirmed_at': self.confirmed_at.isoformat() if self.confirmed_at else None,
+            'annotation_file_path': self.annotation_file_path,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
-        }
-
-class Annotation(db.Model):
-    __tablename__ = 'annotations'
-
-    id = db.Column(db.Integer, primary_key=True)
-    ct_image_id = db.Column(db.Integer, db.ForeignKey('ct_images.id'), nullable=False)
-    doctor_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-
-    annotation_type = db.Column(db.String(30))
-    slice_number = db.Column(db.Integer)
-    coordinates_x = db.Column(db.Float)
-    coordinates_y = db.Column(db.Float)
-    coordinates_z = db.Column(db.Float)
-    radius = db.Column(db.Float)
-    label = db.Column(db.String(100))
-    severity = db.Column(db.String(20))
-    notes = db.Column(db.Text)
-
-    is_abnormal = db.Column(db.Boolean, default=False)
-    ai_generated = db.Column(db.Boolean, default=False)
-
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'ct_image_id': self.ct_image_id,
-            'doctor_id': self.doctor_id,
-            'annotation_type': self.annotation_type,
-            'slice_number': self.slice_number,
-            'coordinates': {
-                'x': self.coordinates_x,
-                'y': self.coordinates_y,
-                'z': self.coordinates_z
-            },
-            'radius': self.radius,
-            'label': self.label,
-            'severity': self.severity,
-            'notes': self.notes,
-            'is_abnormal': self.is_abnormal,
-            'ai_generated': self.ai_generated,
-            'created_at': self.created_at.isoformat() if self.created_at else None
         }

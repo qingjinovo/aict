@@ -4,7 +4,6 @@ from config import config
 from extensions import db, login_manager
 from routes import auth_bp, doctor_bp, patient_bp, api_bp
 from routes.auth_api import auth_api_bp
-from routes.annotation_api import annotation_bp
 from routes.sam3d_api import sam3d_bp
 from utils.cors import init_cors
 
@@ -36,7 +35,6 @@ def create_app(config_name='default'):
     app.register_blueprint(doctor_bp)
     app.register_blueprint(patient_bp)
     app.register_blueprint(api_bp)
-    app.register_blueprint(annotation_bp)
     app.register_blueprint(sam3d_bp)
 
     @app.template_filter('format_datetime')

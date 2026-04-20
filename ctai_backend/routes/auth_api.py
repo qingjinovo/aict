@@ -58,6 +58,7 @@ def api_login():
         user = User.query.filter_by(employee_id=employee_id, role='doctor').first()
 
         if user and user.check_password(password):
+            login_user(user, remember=True)
             token = generate_token(user.id, 'doctor')
 
             return jsonify({
@@ -117,7 +118,9 @@ def api_login():
 @require_auth
 def api_logout():
     """API 登出接口"""
+    from flask import session
     logout_user()
+    session.clear()
     return jsonify({'success': True, 'message': '登出成功'})
 
 

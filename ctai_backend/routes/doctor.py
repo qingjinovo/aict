@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from flask_login import login_required, current_user
 from models.user import User
-from models.ct_image import CTImage, Annotation
+from models.ct_image import CTImage
 from models.progress import ProgressRecord, Message, Notification
 from extensions import db
 from services.notification_service import NotificationService, ProgressService
@@ -62,13 +62,11 @@ def annotate(report_id):
         return redirect(url_for('auth.role_selection'))
 
     ct_image = CTImage.query.get_or_404(report_id)
-    annotations = Annotation.query.filter_by(ct_image_id=report_id).all()
     progress_info = ProgressService.get_ct_progress(report_id)
     messages = Message.query.filter_by(ct_image_id=report_id).order_by(Message.created_at.asc()).all()
 
     return render_template('doctor/annotate.html',
                          ct_image=ct_image,
-                         annotations=annotations,
                          progress_info=progress_info,
                          messages=messages)
 
@@ -79,7 +77,6 @@ def confirm(report_id):
         return redirect(url_for('auth.role_selection'))
 
     ct_image = CTImage.query.get_or_404(report_id)
-    annotations = Annotation.query.filter_by(ct_image_id=report_id).all()
 
     if request.method == 'POST':
         ct_image.final_report = request.form.get('final_report', '')
@@ -102,8 +99,7 @@ def confirm(report_id):
         return redirect(url_for('doctor.dashboard'))
 
     return render_template('doctor/confirm.html',
-                         ct_image=ct_image,
-                         annotations=annotations)
+                         ct_image=ct_image)
 
 @doctor_bp.route('/doctor/message/<int:message_id>')
 @login_required

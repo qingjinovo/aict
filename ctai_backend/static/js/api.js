@@ -204,7 +204,7 @@ API.Auth = {
 
     logout() {
         authManager.clear();
-        window.location.href = '/login';
+        window.location.href = '/logout';
     },
 
     getUser() {

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NiiVue Medical Image Viewer - Patient View</title>
+    <script src="https://unpkg.com/@niivue/niivue@0.68.2/dist/niivue.umd.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; overflow: hidden; font-family: Roboto, sans-serif; }
+      #container { width: 100%; height: 100%; background: #000; position: relative; }
+      canvas { display: block; width: 100%; height: 100%; }
+      .toolbar {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 100;
+        background: rgba(0,0,0,0.85);
+        padding: 10px;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 140px;
+      }
+      .toolbar-row {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .toolbar button {
+        background: #2196F3;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        min-width: 50px;
+      }
+      .toolbar button:hover { background: #1976D2; }
+      .toolbar button.active { background: #4CAF50; }
+      .info {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        z-index: 100;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <canvas id="nv-canvas"></canvas>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-row">
+        <button onclick="setSliceType('axial')" id="btn-axial">横断面</button>
+        <button onclick="setSliceType('coronal')" id="btn-coronal">冠状面</button>
+        <button onclick="setSliceType('sagittal')" id="btn-sagittal">矢状面</button>
+      </div>
+      <div class="toolbar-row">
+        <button onclick="setSliceType('multi')" id="btn-multi">多平面</button>
+        <button onclick="setSliceType('3d')" id="btn-3d">3D视图</button>
+      </div>
+    </div>
+    <div class="info" id="info">等待加载...</div>
+
+    <script>
+      let nv = null;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const fileUrl = urlParams.get('file');
+      const ctImageId = urlParams.get('ctImageId');
+
+      async function init() {
+        const canvas = document.getElementById('nv-canvas');
+
+        nv = new niivue.Niivue({
+          loadingText: '加载医学影像...',
+          backColor: [0, 0, 0, 1],
+          crosshairColor: [0, 1, 1, 1],
+          show3Dcrosshair: true
+        });
+
+        nv.attachTo('nv-canvas');
+
+        let volumes = [];
+        if (fileUrl) {
+          volumes = [{ url: fileUrl }];
+        } else {
+          volumes = [{ url: './hippo.nii' }];
+        }
+
+        try {
+          await nv.loadVolumes(volumes);
+          document.getElementById('info').textContent = '影像已加载: ' + (nv.volumes[0]?.name || 'unknown');
+          notifyParent('niivue-ready', { success: true });
+        } catch (err) {
+          console.error('Failed to load volume:', err);
+          document.getElementById('info').textContent = '加载失败: ' + err.message;
+          notifyParent('niivue-error', { error: err.message });
+        }
+
+        nv.opts.onLocationChange = handleLocationChange;
+        nv.opts.onImageLoaded = handleImageLoaded;
+      }
+
+      function handleLocationChange(data) {
+        if (data && data.values) {
+          document.getElementById('info').textContent =
+            '位置: ' + JSON.stringify(data.values);
+          notifyParent('niivue-location', { values: data.values });
+        }
+      }
+
+      function handleImageLoaded() {
+        notifyParent('niivue-image-loaded', {
+          volumeCount: nv.volumes.length
+        });
+      }
+
+      function setSliceType(type) {
+        if (!nv) return;
+        const sliceTypes = {
+          'axial': nv.sliceTypeAxial,
+          'coronal': nv.sliceTypeCoronal,
+          'sagittal': nv.sliceTypeSagittal,
+          'multi': nv.sliceTypeMultiplanar,
+          '3d': nv.sliceTypeRender
+        };
+        nv.setSliceType(sliceTypes[type]);
+        document.querySelectorAll('.toolbar button').forEach(function(b) { b.classList.remove('active'); });
+        document.getElementById('btn-' + type)?.classList.add('active');
+      }
+
+      function notifyParent(eventName, data) {
+        window.parent.postMessage({ type: eventName, detail: data }, '*');
+      }
+
+      window.getNiivueInstance = () => nv;
+      window.setSliceType = setSliceType;
+
+      init().catch(err => {
+        console.error('Init error:', err);
+        document.getElementById('info').textContent = '初始化失败: ' + err.message;
+      });
+    </script>
+  </body>
+</html>

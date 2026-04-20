@@ -70,9 +70,13 @@ def login():
     return render_template('login.html', role=role)
 
 @auth_bp.route('/logout')
-@login_required
 def logout():
+    from flask import session
+    from flask_login import logout_user
+
     logout_user()
     session.clear()
-    flash('已退出登录', 'info')
-    return redirect(url_for('auth.role_selection'))
+
+    response = redirect(url_for('auth.login'))
+    response.delete_cookie('remember_token')
+    return response

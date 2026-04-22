@@ -61,7 +61,7 @@
                         <iframe
                             id="niivue-iframe-ai"
                             style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
-                            src="/static/niivue/index_patient.html?file={{ ct_image.ai_annotation_file_path | to_web_path }}&ctImageId={{ ct_image.id }}"
+                            src="/static/niivue/index_compare.html?original={{ ct_image.file_path | to_web_path }}&ai={{ ct_image.ai_annotation_file_path | to_web_path }}&ctImageId={{ ct_image.id }}"
                             frameborder="0"
                         ></iframe>
                     </div>

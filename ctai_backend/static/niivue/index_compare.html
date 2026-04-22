@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NiiVue Medical Image Comparison View</title>
+    <script src="https://unpkg.com/pako@2.1.0/dist/pako.min.js"></script>
+    <script src="https://unpkg.com/@niivue/niivue@0.68.2/dist/niivue.umd.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; overflow: hidden; font-family: Roboto, sans-serif; }
+      #container { width: 100%; height: 100%; background: #000; position: relative; }
+      canvas { display: block; width: 100%; height: 100%; }
+      .controls {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 100;
+        background: rgba(0,0,0,0.85);
+        padding: 12px;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-width: 200px;
+        max-width: 280px;
+      }
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .control-label {
+        color: #fff;
+        font-size: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .control-value {
+        color: #2196F3;
+        font-weight: 500;
+      }
+      input[type="range"] {
+        width: 100%;
+        height: 6px;
+        border-radius: 3px;
+        background: #444;
+        outline: none;
+        -webkit-appearance: none;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #2196F3;
+        cursor: pointer;
+      }
+      .color-buttons {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .color-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 4px;
+        border: 2px solid transparent;
+        cursor: pointer;
+      }
+      .color-btn.active {
+        border-color: #fff;
+      }
+      .slice-buttons {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      .slice-btn {
+        background: #333;
+        color: #fff;
+        border: none;
+        padding: 6px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+      }
+      .slice-btn:hover { background: #444; }
+      .slice-btn.active { background: #2196F3; }
+      .toggle-group {
+        display: flex;
+        gap: 6px;
+      }
+      .toggle-btn {
+        background: #333;
+        color: #fff;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+      .toggle-btn.active { background: #4CAF50; }
+      .info {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        z-index: 100;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <canvas id="nv-canvas"></canvas>
+    </div>
+    <div class="controls">
+      <div class="control-group">
+        <div class="control-label">
+          <span>原图透明度</span>
+          <span class="control-value" id="opacity-value">50%</span>
+        </div>
+        <input type="range" id="opacity-slider" min="0" max="100" value="50" />
+      </div>
+      <div class="control-group">
+        <div class="control-label">
+          <span>AI标注透明度</span>
+          <span class="control-value" id="ai-opacity-value">80%</span>
+        </div>
+        <input type="range" id="ai-opacity-slider" min="0" max="100" value="80" />
+      </div>
+      <div class="control-group">
+        <div class="control-label">AI标注颜色</div>
+        <div class="color-buttons">
+          <button class="color-btn active" style="background: #FF5722;" data-color="#FF5722" onclick="setAiColor('#FF5722')"></button>
+          <button class="color-btn" style="background: #E91E63;" data-color="#E91E63" onclick="setAiColor('#E91E63')"></button>
+          <button class="color-btn" style="background: #9C27B0;" data-color="#9C27B0" onclick="setAiColor('#9C27B0')"></button>
+          <button class="color-btn" style="background: #2196F3;" data-color="#2196F3" onclick="setAiColor('#2196F3')"></button>
+          <button class="color-btn" style="background: #00BCD4;" data-color="#00BCD4" onclick="setAiColor('#00BCD4')"></button>
+          <button class="color-btn" style="background: #4CAF50;" data-color="#4CAF50" onclick="setAiColor('#4CAF50')"></button>
+          <button class="color-btn" style="background: #FFEB3B;" data-color="#FFEB3B" onclick="setAiColor('#FFEB3B')"></button>
+          <button class="color-btn" style="background: #FF9800;" data-color="#FF9800" onclick="setAiColor('#FF9800')"></button>
+        </div>
+      </div>
+      <div class="control-group">
+        <div class="control-label">视图模式</div>
+        <div class="slice-buttons">
+          <button class="slice-btn active" onclick="setSliceType('axial')">横断面</button>
+          <button class="slice-btn" onclick="setSliceType('coronal')">冠状面</button>
+          <button class="slice-btn" onclick="setSliceType('sagittal')">矢状面</button>
+          <button class="slice-btn" onclick="setSliceType('multi')">多平面</button>
+          <button class="slice-btn" onclick="setSliceType('3d')">3D视图</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <div class="control-label">显示控制</div>
+        <div class="toggle-group">
+          <button class="toggle-btn active" id="btn-show-original" onclick="toggleOriginal()">原图</button>
+          <button class="toggle-btn active" id="btn-show-ai" onclick="toggleAi()">AI标注</button>
+        </div>
+      </div>
+    </div>
+    <div class="info" id="info">等待加载...</div>
+
+    <script>
+      let nv = null;
+      let originalVolume = null;
+      let aiVolume = null;
+      let showOriginal = true;
+      let showAi = true;
+      let currentAiColor = '#FF5722';
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const originalUrl = urlParams.get('original') || '';
+      const aiUrl = urlParams.get('ai') || '';
+      const ctImageId = urlParams.get('ctImageId') || '';
+
+      function makeAbsoluteUrl(relativePath) {
+        if (!relativePath || typeof relativePath !== 'string') {
+          console.warn('Invalid path:', relativePath);
+          return null;
+        }
+        if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+          return relativePath;
+        }
+        const base = window.location.origin;
+        if (relativePath.startsWith('/')) {
+          return base + relativePath;
+        }
+        return base + '/' + relativePath;
+      }
+
+      async function init() {
+        const canvas = document.getElementById('nv-canvas');
+
+        nv = new niivue.Niivue({
+          loadingText: '加载医学影像...',
+          backColor: [0, 0, 0, 1],
+          crosshairColor: [0, 1, 1, 1],
+          show3Dcrosshair: true
+        });
+
+        nv.attachTo('nv-canvas');
+
+        const volumes = [];
+        if (originalUrl) {
+          volumes.push({ url: originalUrl });
+        }
+        if (aiUrl) {
+          volumes.push({ url: aiUrl });
+        }
+
+        if (volumes.length === 0) {
+          volumes = [{ url: './hippo.nii' }];
+        }
+
+        console.log('Loading volumes:', volumes);
+
+        try {
+          if (volumes.length > 1) {
+            await nv.loadVolumes([volumes[0], volumes[1]]);
+          } else {
+            await nv.loadVolumes([volumes[0]]);
+          }
+          document.getElementById('info').textContent = '已加载 ' + nv.volumes.length + ' 个文件';
+          window.nv = nv;
+          notifyParent('niivue-ready', { success: true, volumeCount: nv.volumes.length });
+        } catch (err) {
+          console.error('Failed to load volumes:', err);
+          document.getElementById('info').textContent = '加载失败: ' + err.message;
+          notifyParent('niivue-error', { error: err.message });
+        }
+
+        nv.opts.onLocationChange = handleLocationChange;
+      }
+
+      function hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? [
+          parseInt(result[1], 16) / 255,
+          parseInt(result[2], 16) / 255,
+          parseInt(result[3], 16) / 255
+        ] : [1, 0.34, 0.13];
+      }
+
+      function setAiColor(color) {
+        currentAiColor = color;
+        document.querySelectorAll('.color-btn').forEach(function(btn) {
+          btn.classList.toggle('active', btn.dataset.color === color);
+        });
+        const nvInstance = window.nv;
+        if (!nvInstance || !nvInstance.volumes) return;
+        const rgb = hexToRgb(color);
+        for (let i = 0; i < nvInstance.volumes.length; i++) {
+          const vol = nvInstance.volumes[i];
+          if (vol.name && vol.name.includes('AI')) {
+            if (nvInstance.setColorOverride) {
+              nvInstance.setColorOverride(i, rgb);
+              nvInstance.updateGLVolume();
+            }
+          }
+        }
+      }
+
+      function setSliceType(type) {
+        const nvInstance = window.nv;
+        if (!nvInstance) return;
+        const sliceTypes = {
+          'axial': nvInstance.sliceTypeAxial,
+          'coronal': nvInstance.sliceTypeCoronal,
+          'sagittal': nvInstance.sliceTypeSagittal,
+          'multi': nvInstance.sliceTypeMultiplanar,
+          '3d': nvInstance.sliceTypeRender
+        };
+        nvInstance.setSliceType(sliceTypes[type]);
+        document.querySelectorAll('.slice-btn').forEach(function(b) { b.classList.remove('active'); });
+        event.target.classList.add('active');
+      }
+
+      function toggleOriginal() {
+        const nvInstance = window.nv;
+        if (!nvInstance || !nvInstance.volumes) return;
+        showOriginal = !showOriginal;
+        document.getElementById('btn-show-original').classList.toggle('active', showOriginal);
+        for (let i = 0; i < nvInstance.volumes.length; i++) {
+          const vol = nvInstance.volumes[i];
+          if (vol.name && vol.name.includes('原图')) {
+            vol.opacity = showOriginal ? 0.5 : 0;
+          }
+        }
+        nvInstance.updateGLVolume();
+      }
+
+      function toggleAi() {
+        const nvInstance = window.nv;
+        if (!nvInstance || !nvInstance.volumes) return;
+        showAi = !showAi;
+        document.getElementById('btn-show-ai').classList.toggle('active', showAi);
+        for (let i = 0; i < nvInstance.volumes.length; i++) {
+          const vol = nvInstance.volumes[i];
+          if (vol.name && vol.name.includes('AI')) {
+            vol.opacity = showAi ? 0.8 : 0;
+          }
+        }
+        nvInstance.updateGLVolume();
+      }
+
+      function updateInfo() {
+        if (!nv || !nv.volumes || nv.volumes.length === 0) {
+          document.getElementById('info').textContent = '无影像';
+          return;
+        }
+        const names = nv.volumes.map(v => v.name || '未知').join(' + ');
+        document.getElementById('info').textContent = '已加载: ' + names;
+      }
+
+      document.getElementById('opacity-slider').addEventListener('input', function(e) {
+        const val = parseInt(e.target.value);
+        document.getElementById('opacity-value').textContent = val + '%';
+        const nvInstance = window.nv;
+        if (!nvInstance || !nvInstance.volumes) return;
+        for (let i = 0; i < nvInstance.volumes.length; i++) {
+          const vol = nvInstance.volumes[i];
+          if (vol.name && vol.name.includes('原图')) {
+            vol.opacity = val / 100;
+          }
+        }
+        nvInstance.updateGLVolume();
+      });
+
+      document.getElementById('ai-opacity-slider').addEventListener('input', function(e) {
+        const val = parseInt(e.target.value);
+        document.getElementById('ai-opacity-value').textContent = val + '%';
+        const nvInstance = window.nv;
+        if (!nvInstance || !nvInstance.volumes) return;
+        for (let i = 0; i < nvInstance.volumes.length; i++) {
+          const vol = nvInstance.volumes[i];
+          if (vol.name && vol.name.includes('AI')) {
+            vol.opacity = val / 100;
+          }
+        }
+        nvInstance.updateGLVolume();
+      });
+
+      function handleLocationChange(data) {
+        if (data && data.values) {
+          notifyParent('niivue-location', { values: data.values });
+        }
+      }
+
+      function notifyParent(eventName, data) {
+        window.parent.postMessage({ type: eventName, detail: data }, '*');
+      }
+
+      window.getNiivueInstance = () => nv;
+      window.setSliceType = setSliceType;
+      window.setAiColor = setAiColor;
+
+      init().catch(err => {
+        console.error('Init error:', err);
+        document.getElementById('info').textContent = '初始化失败: ' + err.message;
+      });
+    </script>
+  </body>
+</html>

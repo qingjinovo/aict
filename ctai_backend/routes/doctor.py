@@ -4,7 +4,7 @@ from models.user import User
 from models.ct_image import CTImage
 from models.progress import ProgressRecord, Message, Notification
 from extensions import db
-from services.notification_service import NotificationService, ProgressService
+from services.notification_service import NotificationService, ProgressService, MessageService
 from services.file_upload_service import FileUploadService
 import os
 

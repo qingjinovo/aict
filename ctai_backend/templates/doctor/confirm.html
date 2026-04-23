@@ -34,30 +34,12 @@
             <div class="lg:col-span-3">
                 <div class="bg-white rounded-lg p-4 sm:p-6 mb-4" style="border: 1px solid #E5E7EB;">
                     <h3 class="mb-4 flex items-center gap-2" style="font-size: 16px; font-weight: 600; color: #030213;">
-                        <i data-lucide="image" class="w-5 h-5" style="color: #717182;"></i>
-                        CT原图
-                    </h3>
-                    <div class="bg-black rounded-lg relative overflow-hidden mb-4" style="height: clamp(250px, 40vw, 400px);">
-                        <iframe
-                            id="niivue-iframe-original"
-                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
-                            src="/static/niivue/index_patient.html?file=/static/uploads/ct_images/{{ ct_image.file_name }}&ctImageId={{ ct_image.id }}"
-                            frameborder="0"
-                        ></iframe>
-                    </div>
-                    <div class="p-3 rounded-lg flex items-center gap-2 overflow-x-auto" style="background-color: #F5F7FA; border: 1px solid #E5E7EB;">
-                        <span style="font-size: 13px; color: #717182;">使用上方 viewers 切换不同平面查看 CT 图像</span>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-lg p-4 sm:p-6 mb-4" style="border: 1px solid #E5E7EB;">
-                    <h3 class="mb-4 flex items-center gap-2" style="font-size: 16px; font-weight: 600; color: #030213;">
                         <i data-lucide="sparkles" class="w-5 h-5" style="color: #165DFF;"></i>
                         AI标注结果
                     </h3>
 
                     {% if ct_image.ai_annotation_file_path %}
-                    <div class="bg-black rounded-lg relative overflow-hidden mb-4" style="height: clamp(250px, 40vw, 400px);">
+                    <div class="bg-black rounded-lg relative overflow-hidden mb-4" style="height: clamp(375px, 50vw, 600px);">
                         <iframe
                             id="niivue-iframe-ai"
                             style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"

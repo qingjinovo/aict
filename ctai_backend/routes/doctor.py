@@ -146,7 +146,7 @@ def confirm(report_id):
                          ct_image=ct_image,
                          progress_info=progress_info)
 
-@doctor_bp.route('/doctor/message/<int:message_id>')
+@doctor_bp.route('/doctor/message/<int:message_id>', methods=['GET', 'POST'])
 @login_required
 def message_detail(message_id):
     if not current_user.is_doctor():
@@ -160,10 +160,28 @@ def message_detail(message_id):
     ct_image = message.ct_image
     patient = ct_image.patient if ct_image else None
 
+    if request.method == 'POST':
+        reply = request.form.get('reply', '')
+        if reply and message.sender_id:
+            MessageService.create_message(
+                ct_image_id=ct_image.id,
+                sender_id=current_user.id,
+                receiver_id=message.sender_id,
+                content=reply
+            )
+            flash('回复已发送', 'success')
+            return redirect(url_for('doctor.message_detail', message_id=message_id))
+
+    all_messages = Message.query.filter(
+        ((Message.sender_id == current_user.id) & (Message.receiver_id == message.sender_id)) |
+        ((Message.sender_id == message.sender_id) & (Message.receiver_id == current_user.id))
+    ).filter(Message.ct_image_id == ct_image.id).order_by(Message.created_at.asc()).all()
+
     return render_template('doctor/message_detail.html',
                          message=message,
                          ct_image=ct_image,
-                         patient=patient)
+                         patient=patient,
+                         messages=all_messages)
 
 @doctor_bp.route('/doctor/messages')
 @login_required

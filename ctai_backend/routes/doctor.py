@@ -18,10 +18,14 @@ def dashboard():
         return redirect(url_for('auth.role_selection'))
 
     pending_reports = CTImage.query.filter(
+        CTImage.doctor_id == current_user.id,
         CTImage.status.in_(['uploaded', 'notifying', 'doctor_reviewing', 'ai_processing', 'ai_completed', 'doctor_annotating', 'pending_confirmation'])
     ).order_by(CTImage.created_at.desc()).all()
 
-    completed_reports = CTImage.query.filter_by(status='completed').order_by(CTImage.updated_at.desc()).limit(10).all()
+    completed_reports = CTImage.query.filter_by(
+        doctor_id=current_user.id,
+        status='completed'
+    ).order_by(CTImage.updated_at.desc()).limit(10).all()
 
     messages = Message.query.filter_by(receiver_id=current_user.id).order_by(Message.created_at.desc()).limit(5).all()
     unread_count = Message.query.filter_by(receiver_id=current_user.id, is_read=False).count()

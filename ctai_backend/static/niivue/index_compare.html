@@ -169,31 +169,29 @@
 
     <script>
       let nv = null;
-      let originalVolume = null;
-      let aiVolume = null;
+      let originalVolumeIndex = -1;
+      let aiVolumeIndex = -1;
       let showOriginal = true;
       let showAi = true;
       let currentAiColor = '#FF5722';
+      let originalOpacity = 0.5;
+      let aiOpacity = 0.8;
 
       const urlParams = new URLSearchParams(window.location.search);
       const originalUrl = urlParams.get('original') || '';
       const aiUrl = urlParams.get('ai') || '';
       const ctImageId = urlParams.get('ctImageId') || '';
 
-      function makeAbsoluteUrl(relativePath) {
-        if (!relativePath || typeof relativePath !== 'string') {
-          console.warn('Invalid path:', relativePath);
-          return null;
-        }
-        if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
-          return relativePath;
-        }
-        const base = window.location.origin;
-        if (relativePath.startsWith('/')) {
-          return base + relativePath;
-        }
-        return base + '/' + relativePath;
-      }
+      const customColormaps = {
+        'custom-orange': { R: [255, 87, 34], G: [0, 0, 0], B: [0, 0, 0], A: [0, 128, 255], I: [0, 127, 255] },
+        'custom-pink': { R: [233, 30, 99], G: [0, 0, 0], B: [0, 0, 0], A: [0, 128, 255], I: [0, 127, 255] },
+        'custom-purple': { R: [156, 39, 176], G: [0, 0, 0], B: [0, 0, 0], A: [0, 128, 255], I: [0, 127, 255] },
+        'custom-blue': { R: [33, 150, 243], G: [0, 0, 0], B: [0, 0, 0], A: [0, 128, 255], I: [0, 127, 255] },
+        'custom-cyan': { R: [0, 188, 212], G: [0, 0, 0], B: [0, 0, 0], A: [0, 128, 255], I: [0, 127, 255] },
+        'custom-green': { R: [76, 175, 80], G: [0, 0, 0], B: [0, 0, 0], A: [0, 128, 255], I: [0, 127, 255] },
+        'custom-yellow': { R: [255, 235, 59], G: [0, 0, 0], B: [0, 0, 0], A: [0, 128, 255], I: [0, 127, 255] },
+        'custom-orange2': { R: [255, 152, 0], G: [0, 0, 0], B: [0, 0, 0], A: [0, 128, 255], I: [0, 127, 255] }
+      };
 
       async function init() {
         const canvas = document.getElementById('nv-canvas');
@@ -207,6 +205,10 @@
 
         nv.attachTo('nv-canvas');
 
+        for (const [name, cmap] of Object.entries(customColormaps)) {
+          nv.addColormap(name, cmap);
+        }
+
         const volumes = [];
         if (originalUrl) {
           volumes.push({ url: originalUrl });
@@ -216,7 +218,7 @@
         }
 
         if (volumes.length === 0) {
-          volumes = [{ url: './hippo.nii' }];
+          volumes.push({ url: './hippo.nii' });
         }
 
         console.log('Loading volumes:', volumes);
@@ -228,6 +230,20 @@
             await nv.loadVolumes([volumes[0]]);
           }
           document.getElementById('info').textContent = '已加载 ' + nv.volumes.length + ' 个文件';
+
+          if (nv.volumes.length >= 2) {
+            originalVolumeIndex = 0;
+            aiVolumeIndex = 1;
+            nv.volumes[originalVolumeIndex].opacity = originalOpacity;
+            nv.volumes[aiVolumeIndex].opacity = aiOpacity;
+            nv.setColormap(nv.volumes[aiVolumeIndex].id, 'custom-orange');
+            nv.updateGLVolume();
+          } else if (nv.volumes.length === 1) {
+            originalVolumeIndex = 0;
+            aiVolumeIndex = -1;
+            nv.volumes[originalVolumeIndex].opacity = 1;
+          }
+
           window.nv = nv;
           notifyParent('niivue-ready', { success: true, volumeCount: nv.volumes.length });
         } catch (err) {
@@ -239,13 +255,18 @@
         nv.opts.onLocationChange = handleLocationChange;
       }
 
-      function hexToRgb(hex) {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? [
-          parseInt(result[1], 16) / 255,
-          parseInt(result[2], 16) / 255,
-          parseInt(result[3], 16) / 255
-        ] : [1, 0.34, 0.13];
+      function colorHexToColormapName(hex) {
+        const colorMapNames = {
+          '#FF5722': 'custom-orange',
+          '#E91E63': 'custom-pink',
+          '#9C27B0': 'custom-purple',
+          '#2196F3': 'custom-blue',
+          '#00BCD4': 'custom-cyan',
+          '#4CAF50': 'custom-green',
+          '#FFEB3B': 'custom-yellow',
+          '#FF9800': 'custom-orange2'
+        };
+        return colorMapNames[hex] || 'custom-orange';
       }
 
       function setAiColor(color) {
@@ -254,17 +275,10 @@
           btn.classList.toggle('active', btn.dataset.color === color);
         });
         const nvInstance = window.nv;
-        if (!nvInstance || !nvInstance.volumes) return;
-        const rgb = hexToRgb(color);
-        for (let i = 0; i < nvInstance.volumes.length; i++) {
-          const vol = nvInstance.volumes[i];
-          if (vol.name && vol.name.includes('AI')) {
-            if (nvInstance.setColorOverride) {
-              nvInstance.setColorOverride(i, rgb);
-              nvInstance.updateGLVolume();
-            }
-          }
-        }
+        if (!nvInstance || aiVolumeIndex < 0) return;
+        const colormapName = colorHexToColormapName(color);
+        const volumeId = nvInstance.volumes[aiVolumeIndex].id;
+        nvInstance.setColormap(volumeId, colormapName);
       }
 
       function setSliceType(type) {
@@ -284,29 +298,19 @@
 
       function toggleOriginal() {
         const nvInstance = window.nv;
-        if (!nvInstance || !nvInstance.volumes) return;
+        if (!nvInstance || originalVolumeIndex < 0) return;
         showOriginal = !showOriginal;
         document.getElementById('btn-show-original').classList.toggle('active', showOriginal);
-        for (let i = 0; i < nvInstance.volumes.length; i++) {
-          const vol = nvInstance.volumes[i];
-          if (vol.name && vol.name.includes('原图')) {
-            vol.opacity = showOriginal ? 0.5 : 0;
-          }
-        }
+        nvInstance.volumes[originalVolumeIndex].opacity = showOriginal ? originalOpacity : 0;
         nvInstance.updateGLVolume();
       }
 
       function toggleAi() {
         const nvInstance = window.nv;
-        if (!nvInstance || !nvInstance.volumes) return;
+        if (!nvInstance || aiVolumeIndex < 0) return;
         showAi = !showAi;
         document.getElementById('btn-show-ai').classList.toggle('active', showAi);
-        for (let i = 0; i < nvInstance.volumes.length; i++) {
-          const vol = nvInstance.volumes[i];
-          if (vol.name && vol.name.includes('AI')) {
-            vol.opacity = showAi ? 0.8 : 0;
-          }
-        }
+        nvInstance.volumes[aiVolumeIndex].opacity = showAi ? aiOpacity : 0;
         nvInstance.updateGLVolume();
       }
 
@@ -315,35 +319,31 @@
           document.getElementById('info').textContent = '无影像';
           return;
         }
-        const names = nv.volumes.map(v => v.name || '未知').join(' + ');
+        const names = nv.volumes.map((v, i) => {
+          if (i === originalVolumeIndex) return '原图';
+          if (i === aiVolumeIndex) return 'AI标注';
+          return v.name || '未知';
+        }).join(' + ');
         document.getElementById('info').textContent = '已加载: ' + names;
       }
 
       document.getElementById('opacity-slider').addEventListener('input', function(e) {
         const val = parseInt(e.target.value);
         document.getElementById('opacity-value').textContent = val + '%';
+        originalOpacity = val / 100;
         const nvInstance = window.nv;
-        if (!nvInstance || !nvInstance.volumes) return;
-        for (let i = 0; i < nvInstance.volumes.length; i++) {
-          const vol = nvInstance.volumes[i];
-          if (vol.name && vol.name.includes('原图')) {
-            vol.opacity = val / 100;
-          }
-        }
+        if (!nvInstance || originalVolumeIndex < 0) return;
+        nvInstance.volumes[originalVolumeIndex].opacity = showOriginal ? originalOpacity : 0;
         nvInstance.updateGLVolume();
       });
 
       document.getElementById('ai-opacity-slider').addEventListener('input', function(e) {
         const val = parseInt(e.target.value);
         document.getElementById('ai-opacity-value').textContent = val + '%';
+        aiOpacity = val / 100;
         const nvInstance = window.nv;
-        if (!nvInstance || !nvInstance.volumes) return;
-        for (let i = 0; i < nvInstance.volumes.length; i++) {
-          const vol = nvInstance.volumes[i];
-          if (vol.name && vol.name.includes('AI')) {
-            vol.opacity = val / 100;
-          }
-        }
+        if (!nvInstance || aiVolumeIndex < 0) return;
+        nvInstance.volumes[aiVolumeIndex].opacity = showAi ? aiOpacity : 0;
         nvInstance.updateGLVolume();
       });
 

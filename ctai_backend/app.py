@@ -61,9 +61,14 @@ def create_app(config_name='default'):
         if not file_path:
             return ''
         path = file_path.replace('\\', '/')
-        static_prefix = 'D:/Study/Project/JSJDS/demo/ctai_backend/static'
-        if static_prefix in path:
-            path = path.replace(static_prefix, '')
+        static_prefixes = [
+            'D:/Study/Project/JSJDS/demo/ctai_backend/static',
+            '/root/file/aict/ctai_backend/static',
+            '/root/file/aict/ctai_web/static'
+        ]
+        for prefix in static_prefixes:
+            if prefix in path:
+                path = path.replace(prefix, '')
         if not path.startswith('/'):
             path = '/' + path
         if not path.startswith('/static/'):

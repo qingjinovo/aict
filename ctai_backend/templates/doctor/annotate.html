@@ -32,114 +32,66 @@
 {% endblock %}
 
 {% block body %}
-<div class="min-h-screen flex flex-col" style="background-color: #F5F7FA;">
-    <div class="bg-white px-4 sm:px-8 py-4" style="border-bottom: 1px solid #E5E7EB;">
+<div class="min-h-screen flex flex-col" style="background-color: var(--bg-main);">
+    <div class="bg-white px-4 sm:px-8 py-4" style="border-bottom: 1px solid var(--border);">
         <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-4">
                 <button
                     onclick="window.location.href='{{ url_for('doctor.dashboard') }}'"
                     class="flex items-center gap-2 hover:opacity-70 active:opacity-50"
-                    style="color: #717182; font-size: 14px; background: none; border: none; cursor: pointer;">
+                    style="color: var(--text-secondary); font-size: 14px; background: none; border: none; cursor: pointer;">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
                     <span class="hidden sm:inline">返回工作台</span>
                 </button>
-                <h1 style="font-size: clamp(16px, 4vw, 20px); font-weight: 600; color: #030213;">
+                <h1 style="font-size: clamp(16px, 4vw, 20px); font-weight: 600; color: var(--text-primary);">
                     AI 标注精修
                 </h1>
             </div>
         </div>
 
-        <div class="flex items-center gap-4">
-            <div class="flex-1 flex items-center gap-2">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background-color: #00B42A;">
-                        <i data-lucide="upload" class="w-4 h-4" style="color: #FFFFFF;"></i>
-                    </div>
-                    <span style="font-size: 14px; color: #00B42A; font-weight: 600;">上传</span>
+        <div class="flex items-center gap-2 sm:gap-4 overflow-x-auto pb-2">
+            <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: var(--success);">
+                    <i data-lucide="upload" class="w-3 h-3 sm:w-4 sm:h-4" style="color: var(--bg-surface);"></i>
                 </div>
-                <div class="flex-1 h-1 mx-2" style="background-color: #165DFF; max-width: 100px;"></div>
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background-color: #165DFF;">
-                        <i data-lucide="pen-tool" class="w-4 h-4" style="color: #FFFFFF;"></i>
-                    </div>
-                    <span style="font-size: 14px; color: #165DFF; font-weight: 600;">医生标注</span>
+                <span class="text-xs sm:text-sm" style="color: var(--success); font-weight: 600;">上传</span>
+            </div>
+            <div class="flex-1 h-0.5 sm:h-1 mx-1 sm:mx-2" style="background-color: var(--primary-text); min-width: 20px; max-width: 100px;"></div>
+            <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: var(--primary-text);">
+                    <i data-lucide="pen-tool" class="w-3 h-3 sm:w-4 sm:h-4" style="color: var(--bg-surface);"></i>
                 </div>
-                <div class="flex-1 h-1 mx-2" style="background-color: #E5E7EB; max-width: 100px;"></div>
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background-color: #E5E7EB;">
-                        <i data-lucide="cpu" class="w-4 h-4" style="color: #717182;"></i>
-                    </div>
-                    <span style="font-size: 14px; color: #717182;">AI分析</span>
+                <span class="text-xs sm:text-sm" style="color: var(--primary-text); font-weight: 600;">医生标注</span>
+            </div>
+            <div class="flex-1 h-0.5 sm:h-1 mx-1 sm:mx-2" style="background-color: var(--border); min-width: 20px; max-width: 100px;"></div>
+            <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: var(--border);">
+                    <i data-lucide="cpu" class="w-3 h-3 sm:w-4 sm:h-4" style="color: var(--text-secondary);"></i>
                 </div>
-                <div class="flex-1 h-1 mx-2" style="background-color: #E5E7EB; max-width: 100px;"></div>
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background-color: #E5E7EB;">
-                        <i data-lucide="file-check" class="w-4 h-4" style="color: #717182;"></i>
-                    </div>
-                    <span style="font-size: 14px; color: #717182;">生成报告</span>
+                <span class="text-xs sm:text-sm" style="color: var(--text-secondary);">AI分析</span>
+            </div>
+            <div class="flex-1 h-0.5 sm:h-1 mx-1 sm:mx-2" style="background-color: var(--border); min-width: 20px; max-width: 100px;"></div>
+            <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: var(--border);">
+                    <i data-lucide="file-check" class="w-3 h-3 sm:w-4 sm:h-4" style="color: var(--text-secondary);"></i>
                 </div>
+                <span class="text-xs sm:text-sm" style="color: var(--text-secondary);">生成报告</span>
             </div>
 
-            <div class="hidden lg:block px-4 py-2 rounded-lg" style="background-color: #F5F7FA; border: 1px solid #E5E7EB;">
-                <div style="font-size: 12px; color: #717182;">患者：{{ ct_image.patient.full_name if ct_image.patient else '李XX' }} · {{ ct_image.body_part or '胸部' }} · {{ ct_image.created_at|format_datetime if ct_image.created_at else '2026-04-08' }}</div>
+            <div class="hidden lg:block px-4 py-2 rounded-lg flex-shrink-0 ml-auto" style="background-color: var(--bg-main); border: 1px solid var(--border);">
+                <div style="font-size: 12px; color: var(--text-secondary);">患者：{{ ct_image.patient.full_name if ct_image.patient else '李XX' }} · {{ ct_image.body_part or '胸部' }} · {{ ct_image.created_at|format_datetime if ct_image.created_at else '2026-04-08' }}</div>
             </div>
         </div>
     </div>
 
     <div class="flex-1 flex flex-col overflow-hidden">
         <div class="flex-1 flex overflow-hidden" style="min-height: 60vh;">
-            <div class="hidden lg:block w-80 bg-white p-6 overflow-y-auto" style="border-right: 1px solid #E5E7EB;">
-                <h3 class="mb-4 flex items-center gap-2" style="font-size: 14px; font-weight: 600; color: #030213;">
-                    <i data-lucide="layers" class="w-4 h-4"></i>
-                    操作说明
-                </h3>
-
-                <div class="space-y-3">
-                    <div class="p-4 rounded-lg" style="background-color: #F5F7FA; border: 1px solid #E5E7EB;">
-                        <div class="flex items-center gap-2 mb-2">
-                            <i data-lucide="mouse-pointer" class="w-4 h-4" style="color: #165DFF;"></i>
-                            <span style="font-size: 14px; font-weight: 600; color: #030213;">基本操作</span>
-                        </div>
-                        <ul style="font-size: 12px; color: #717182; line-height: 1.8; padding-left: 20px;">
-                            <li>拖拽旋转3D视图</li>
-                            <li>滚轮缩放</li>
-                            <li>点击切换切片</li>
-                        </ul>
-                    </div>
-
-                    <div class="p-4 rounded-lg" style="background-color: #F5F7FA; border: 1px solid #E5E7EB;">
-                        <div class="flex items-center gap-2 mb-2">
-                            <i data-lucide="pen-tool" class="w-4 h-4" style="color: #165DFF;"></i>
-                            <span style="font-size: 14px; font-weight: 600; color: #030213;">标注工具</span>
-                        </div>
-                        <ul style="font-size: 12px; color: #717182; line-height: 1.8; padding-left: 20px;">
-                            <li>点击"标注"按钮启用画笔</li>
-                            <li>在图像上绘制分割区域</li>
-                            <li>点击"保存"导出标注</li>
-                        </ul>
-                    </div>
-
-                    <div class="p-4 rounded-lg" style="background-color: #F5F7FA; border: 1px solid #E5E7EB;">
-                        <div class="flex items-center gap-2 mb-2">
-                            <i data-lucide="square" class="w-4 h-4" style="color: #165DFF;"></i>
-                            <span style="font-size: 14px; font-weight: 600; color: #030213;">视图切换</span>
-                        </div>
-                        <ul style="font-size: 12px; color: #717182; line-height: 1.8; padding-left: 20px;">
-                            <li>横断面 - 轴向切片</li>
-                            <li>冠状面 - 前后切片</li>
-                            <li>矢状面 - 左右切片</li>
-                            <li>多平面 - 同时显示三个视图</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
             <div class="flex-1 flex flex-col lg:flex-row gap-4 p-4 sm:p-6 overflow-hidden" style="height: 800px;">
                 <div class="flex-1 lg:w-3/5" style="height: 100%;">
                     <div id="niivue-wrapper" class="bg-black rounded-lg" style="position: relative; width: 100%; height: 675px; min-height: 675px;">
                         <div id="loading-overlay" class="loading-overlay">
                             <div class="text-center">
-                                <i data-lucide="loader-2" class="w-12 h-12 animate-spin mb-4" style="color: #165DFF; margin: 0 auto;"></i>
+                                <i data-lucide="loader-2" class="w-12 h-12 animate-spin mb-4" style="color: var(--primary-text); margin: 0 auto;"></i>
                                 <p>正在加载 NIfTI 图像...</p>
                             </div>
                         </div>
@@ -156,19 +108,19 @@
 
                 <div class="hidden lg:flex lg:w-2/5 flex-col gap-4">
                     <div class="bg-black rounded-lg relative overflow-hidden h-1/3 cursor-pointer hover:opacity-90" style="border: 1px solid #444;">
-                        <div class="absolute top-2 left-2 px-2 py-1 rounded" style="background-color: rgba(0, 0, 0, 0.7); font-size: 11px; color: #FFFFFF;">冠状位</div>
+                        <div class="absolute top-2 left-2 px-2 py-1 rounded" style="background-color: rgba(0, 0, 0, 0.7); font-size: 11px; color: var(--bg-surface);">冠状位</div>
                         <div class="absolute inset-0 flex items-center justify-center">
                             <i data-lucide="scan" class="w-12 h-12" style="color: #444;"></i>
                         </div>
                     </div>
                     <div class="bg-black rounded-lg relative overflow-hidden h-1/3 cursor-pointer hover:opacity-90" style="border: 1px solid #444;">
-                        <div class="absolute top-2 left-2 px-2 py-1 rounded" style="background-color: rgba(0, 0, 0, 0.7); font-size: 11px; color: #FFFFFF;">矢状位</div>
+                        <div class="absolute top-2 left-2 px-2 py-1 rounded" style="background-color: rgba(0, 0, 0, 0.7); font-size: 11px; color: var(--bg-surface);">矢状位</div>
                         <div class="absolute inset-0 flex items-center justify-center">
                             <i data-lucide="scan" class="w-12 h-12" style="color: #444;"></i>
                         </div>
                     </div>
                     <div class="bg-black rounded-lg relative overflow-hidden h-1/3 cursor-pointer hover:opacity-90" style="border: 1px solid #444;">
-                        <div class="absolute top-2 left-2 px-2 py-1 rounded" style="background-color: rgba(0, 0, 0, 0.7); font-size: 11px; color: #FFFFFF;">3D 视图</div>
+                        <div class="absolute top-2 left-2 px-2 py-1 rounded" style="background-color: rgba(0, 0, 0, 0.7); font-size: 11px; color: var(--bg-surface);">3D 视图</div>
                         <div class="absolute inset-0 flex items-center justify-center">
                             <i data-lucide="box" class="w-12 h-12" style="color: #444;"></i>
                         </div>
@@ -177,9 +129,9 @@
             </div>
         </div>
 
-        <div class="bg-white border-t overflow-y-auto" style="border-color: #E5E7EB;">
+        <div class="bg-white border-t overflow-y-auto" style="border-color: var(--border);">
             <div class="p-4 sm:p-6">
-                <h3 class="mb-3" style="font-size: 16px; font-weight: 600; color: #030213;">
+                <h3 class="mb-3" style="font-size: 16px; font-weight: 600; color: var(--text-primary);">
                     诊断结论 & 快捷模板
                 </h3>
 
@@ -189,52 +141,52 @@
                         placeholder="请输入诊断结论、病灶描述、治疗建议..."
                         class="w-full px-4 py-3 pr-12 rounded-lg resize-none"
                         rows="3"
-                        style="background-color: #F5F7FA; border: 1px solid #E5E7EB; font-size: 14px; height: 80px;"
+                        style="background-color: var(--bg-main); border: 1px solid var(--border); font-size: 14px; height: 80px;"
                     >{{ ct_image.final_report or '' }}</textarea>
-                    <button class="absolute top-3 right-3 p-2 rounded-lg" style="background-color: #FFFFFF; border: 1px solid #E5E7EB; color: #717182;">
+                    <button class="absolute top-3 right-3 p-2 rounded-lg" style="background-color: var(--bg-surface); border: 1px solid var(--border); color: var(--text-secondary);">
                         <i data-lucide="mic" class="w-4 h-4"></i>
                     </button>
                 </div>
 
                 <div id="diagnosis-templates" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    <button class="diagnosis-template px-4 py-2 rounded-lg text-left hover:bg-blue-50 transition-all" style="background-color: #F5F7FA; border: 1px solid #E5E7EB; color: #717182; font-size: 13px;" data-text="未见明显异常">
+                    <button class="diagnosis-template px-4 py-2 rounded-lg text-left hover:bg-blue-50 transition-all" style="background-color: var(--bg-main); border: 1px solid var(--border); color: var(--text-secondary); font-size: 13px;" data-text="未见明显异常">
                         未见明显异常
                     </button>
-                    <button class="diagnosis-template px-4 py-2 rounded-lg text-left hover:bg-blue-50 transition-all" style="background-color: #F5F7FA; border: 1px solid #E5E7EB; color: #717182; font-size: 13px;" data-text="建议进一步检查">
+                    <button class="diagnosis-template px-4 py-2 rounded-lg text-left hover:bg-blue-50 transition-all" style="background-color: var(--bg-main); border: 1px solid var(--border); color: var(--text-secondary); font-size: 13px;" data-text="建议进一步检查">
                         建议进一步检查
                     </button>
-                    <button class="diagnosis-template px-4 py-2 rounded-lg text-left hover:bg-blue-50 transition-all" style="background-color: #F5F7FA; border: 1px solid #E5E7EB; color: #717182; font-size: 13px;" data-text="病灶边界清晰">
+                    <button class="diagnosis-template px-4 py-2 rounded-lg text-left hover:bg-blue-50 transition-all" style="background-color: var(--bg-main); border: 1px solid var(--border); color: var(--text-secondary); font-size: 13px;" data-text="病灶边界清晰">
                         病灶边界清晰
                     </button>
-                    <button class="diagnosis-template px-4 py-2 rounded-lg text-left hover:bg-blue-50 transition-all" style="background-color: #F5F7FA; border: 1px solid #E5E7EB; color: #717182; font-size: 13px;" data-text="密度均匀">
+                    <button class="diagnosis-template px-4 py-2 rounded-lg text-left hover:bg-blue-50 transition-all" style="background-color: var(--bg-main); border: 1px solid var(--border); color: var(--text-secondary); font-size: 13px;" data-text="密度均匀">
                         密度均匀
                     </button>
-                    <button class="diagnosis-template px-4 py-2 rounded-lg text-left hover:bg-blue-50 transition-all" style="background-color: #F5F7FA; border: 1px solid #E5E7EB; color: #717182; font-size: 13px;" data-text="结构对称">
+                    <button class="diagnosis-template px-4 py-2 rounded-lg text-left hover:bg-blue-50 transition-all" style="background-color: var(--bg-main); border: 1px solid var(--border); color: var(--text-secondary); font-size: 13px;" data-text="结构对称">
                         结构对称
                     </button>
-                    <button class="diagnosis-template px-4 py-2 rounded-lg text-left hover:bg-blue-50 transition-all" style="background-color: #F5F7FA; border: 1px solid #E5E7EB; color: #717182; font-size: 13px;" data-text="定期复查观察">
+                    <button class="diagnosis-template px-4 py-2 rounded-lg text-left hover:bg-blue-50 transition-all" style="background-color: var(--bg-main); border: 1px solid var(--border); color: var(--text-secondary); font-size: 13px;" data-text="定期复查观察">
                         定期复查观察
                     </button>
                 </div>
             </div>
 
-            <div class="flex justify-center p-4 sm:p-6 pb-24 border-t" style="border-color: #E5E7EB;">
+            <div class="flex justify-center p-4 sm:p-6 pb-24 border-t" style="border-color: var(--border);">
                 <div class="w-full max-w-2xl">
                     <div id="submit-status" class="mb-4 text-center" style="display: none;">
-                        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg" style="background-color: #E8F3FF; border: 1px solid #165DFF;">
-                            <i data-lucide="loader-2" class="w-4 h-4 animate-spin" style="color: #165DFF;"></i>
-                            <span id="submit-status-text" style="font-size: 14px; color: #165DFF;"></span>
+                        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg" style="background-color: var(--primary); border: 1px solid var(--primary-text);">
+                            <i data-lucide="loader-2" class="w-4 h-4 animate-spin" style="color: var(--primary-text);"></i>
+                            <span id="submit-status-text" style="font-size: 14px; color: var(--primary-text);"></span>
                         </div>
                     </div>
 
-                    <p class="text-center mb-2" style="font-size: 12px; color: #717182;">
+                    <p class="text-center mb-2" style="font-size: 12px; color: var(--text-secondary);">
                         保存标注后，提交至AI进行智能分割
                     </p>
                     <button
                         id="confirm-report-btn"
                         onclick="submitToAI()"
                         class="w-full flex items-center justify-center gap-2 rounded-lg active:opacity-80"
-                        style="background-color: #165DFF; color: #FFFFFF; font-size: 16px; font-weight: 600; height: 56px; border: none; cursor: pointer;">
+                        style="background-color: var(--primary-text); color: var(--bg-surface); font-size: 16px; font-weight: 600; height: 56px; border: none; cursor: pointer;">
                         <i data-lucide="sparkles" class="w-5 h-5"></i>
                         <span class="hidden sm:inline">提交至AI分割</span>
                         <span class="sm:hidden">提交至AI分割</span>
@@ -274,7 +226,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     iframe.addEventListener('error', function() {
-        loadingOverlay.innerHTML = '<div class="text-center" style="color: #F53F3F;"><p>加载失败，请刷新页面重试</p></div>';
+        loadingOverlay.innerHTML = '<div class="text-center" style="color: var(--error);"><p>加载失败，请刷新页面重试</p></div>';
     });
 
     window.addEventListener('message', function(event) {
@@ -289,7 +241,7 @@ document.addEventListener('DOMContentLoaded', function() {
             saveAnnotationToServer(event.data.detail.filename, event.data.detail.drawingData, event.data.detail.dims);
         } else if (event.data && event.data.type === 'niivue-error') {
             console.error('Niivue error:', event.data.detail.error);
-            loadingOverlay.innerHTML = '<div class="text-center" style="color: #F53F3F;"><p>图像加载失败: ' + event.data.detail.error + '</p></div>';
+            loadingOverlay.innerHTML = '<div class="text-center" style="color: var(--error);"><p>图像加载失败: ' + event.data.detail.error + '</p></div>';
         }
     });
 });
@@ -299,11 +251,11 @@ function showSaveSuccess(message) {
     const statusText = document.getElementById('submit-status-text');
     if (!status || !statusText) return;
     status.style.display = 'block';
-    status.style.backgroundColor = '#E8F3FF';
-    status.style.borderColor = '#165DFF';
+    status.style.backgroundColor = 'var(--primary)';
+    status.style.borderColor = 'var(--primary-text)';
     const icon = status.querySelector('i');
-    if (icon) icon.style.color = '#165DFF';
-    statusText.style.color = '#165DFF';
+    if (icon) icon.style.color = 'var(--primary-text)';
+    statusText.style.color = 'var(--primary-text)';
     statusText.textContent = message;
     setTimeout(() => { if (status) status.style.display = 'none'; }, 3000);
 }
@@ -314,10 +266,10 @@ function showSaveError(message) {
     if (!status || !statusText) return;
     status.style.display = 'block';
     status.style.backgroundColor = '#FFF2E8';
-    status.style.borderColor = '#F53F3F';
+    status.style.borderColor = 'var(--error)';
     const icon = status.querySelector('i');
-    if (icon) icon.style.color = '#F53F3F';
-    statusText.style.color = '#F53F3F';
+    if (icon) icon.style.color = 'var(--error)';
+    statusText.style.color = 'var(--error)';
     statusText.textContent = message;
     setTimeout(() => { if (status) status.style.display = 'none'; }, 3000);
 }
@@ -455,12 +407,12 @@ function showStatus(message, type) {
         statusText.style.color = '#4CAF50';
     } else if (type === 'error') {
         status.style.backgroundColor = '#FFF2E8';
-        status.style.borderColor = '#F53F3F';
-        statusText.style.color = '#F53F3F';
+        status.style.borderColor = 'var(--error)';
+        statusText.style.color = 'var(--error)';
     } else {
-        status.style.backgroundColor = '#E8F3FF';
-        status.style.borderColor = '#165DFF';
-        statusText.style.color = '#165DFF';
+        status.style.backgroundColor = 'var(--primary)';
+        status.style.borderColor = 'var(--primary-text)';
+        statusText.style.color = 'var(--primary-text)';
     }
 
     const icon = status.querySelector('i');

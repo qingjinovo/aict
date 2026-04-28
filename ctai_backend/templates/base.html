@@ -26,11 +26,11 @@
 
     <div id="logout-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content" style="max-width: 400px; text-align: center;">
-            <div style="width: 60px; height: 60px; border-radius: 50%; background-color: #FFECE8; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-                <i data-lucide="log-out" class="w-7 h-7" style="color: #F53F3F;"></i>
+            <div style="width: 60px; height: 60px; border-radius: 50%; background-color: var(--error-light); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                <i data-lucide="log-out" class="w-7 h-7" style="color: var(--error);"></i>
             </div>
-            <h3 style="font-size: 18px; font-weight: 600; color: #030213; margin-bottom: 12px;">确认退出</h3>
-            <p style="font-size: 14px; color: #717182; margin-bottom: 24px;">确定要退出当前账号吗？</p>
+            <h3 style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px;">确认退出</h3>
+            <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 24px;">确定要退出当前账号吗？</p>
             <div style="display: flex; gap: 12px;">
                 <button onclick="closeLogoutModal()" class="btn btn-secondary flex-1">取消</button>
                 <button onclick="confirmLogout()" class="btn btn-danger flex-1">确认退出</button>

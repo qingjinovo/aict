@@ -3,35 +3,35 @@
 {% block title %}AI 智能分割处理中 - SAM-Med3D{% endblock %}
 
 {% block body %}
-<div class="min-h-screen flex items-center justify-center px-4" style="background-color: #F5F7FA;">
+<div class="min-h-screen flex items-center justify-center px-4" style="background-color: var(--bg-main);">
     <div class="w-full max-w-2xl">
-        <div class="bg-white rounded-lg p-6 sm:p-12" style="border: 1px solid #E5E7EB;">
+        <div class="bg-white rounded-lg p-6 sm:p-12" style="border: 1px solid var(--border);">
             <div class="flex justify-center mb-6 sm:mb-8">
                 <div class="relative">
-                    <i data-lucide="loader-2" class="w-12 h-12 sm:w-16 sm:h-16 animate-spin" style="color: #165DFF;"></i>
+                    <i data-lucide="loader-2" class="w-12 h-12 sm:w-16 sm:h-16 animate-spin" style="color: var(--primary-text);"></i>
                 </div>
             </div>
 
-            <h1 class="text-center mb-4" style="font-size: clamp(20px, 4vw, 24px); font-weight: 600; color: #030213;">
+            <h1 class="text-center mb-4" style="font-size: clamp(20px, 4vw, 24px); font-weight: 600; color: var(--text-primary);">
                 AI 智能分割处理中
             </h1>
 
-            <p class="text-center mb-6 sm:mb-8" style="font-size: clamp(14px, 3vw, 16px); color: #717182;">
+            <p class="text-center mb-6 sm:mb-8" style="font-size: clamp(14px, 3vw, 16px); color: var(--text-secondary);">
                 SAM-Med3D 正在分析影像...
             </p>
 
             <div class="mb-6">
-                <div class="w-full h-3 rounded-full overflow-hidden" style="background-color: #F5F7FA;">
-                    <div id="progress-fill" class="h-full transition-all duration-300" style="width: 0%; background-color: #165DFF;"></div>
+                <div class="w-full h-3 rounded-full overflow-hidden" style="background-color: var(--bg-main);">
+                    <div id="progress-fill" class="h-full transition-all duration-300" style="width: 0%; background-color: var(--primary-text);"></div>
                 </div>
-                <p id="progress-text" class="text-center mt-3" style="font-size: 14px; color: #717182;">0%</p>
+                <p id="progress-text" class="text-center mt-3" style="font-size: 14px; color: var(--text-secondary);">0%</p>
             </div>
 
-            <div class="p-4 rounded-lg" style="background-color: #E8F3FF;">
-                <h3 class="mb-2" style="font-size: 14px; font-weight: 600; color: #165DFF;">
+            <div class="p-4 rounded-lg" style="background-color: var(--primary);">
+                <h3 class="mb-2" style="font-size: 14px; font-weight: 600; color: var(--primary-text);">
                     SAM-Med3D 技术说明
                 </h3>
-                <ul class="space-y-1" style="font-size: clamp(11px, 2.5vw, 12px); color: #717182; line-height: 1.6;">
+                <ul class="space-y-1" style="font-size: clamp(11px, 2.5vw, 12px); color: var(--text-secondary); line-height: 1.6;">
                     <li>• 基于 Segment Anything Model 医学影像 3D 版本</li>
                     <li>• 自动识别器官、组织和潜在病灶区域</li>
                     <li>• 生成高精度 3D 分割掩码，辅助医生诊断</li>

@@ -32,18 +32,18 @@
 {% endblock %}
 
 {% block body %}
-<div class="min-h-screen" style="background-color: #F5F7FA;">
-    <div class="bg-white px-4 sm:px-8 py-4" style="border-bottom: 1px solid #E5E7EB;">
+<div class="min-h-screen" style="background-color: var(--bg-main);">
+    <div class="bg-white px-4 sm:px-8 py-4" style="border-bottom: 1px solid var(--border);">
         <div class="max-w-6xl mx-auto">
             <div class="flex items-center gap-4">
                 <button
                     onclick="window.location.href='{{ url_for('patient.dashboard') }}'"
                     class="flex items-center gap-2 hover:opacity-70 active:opacity-50"
-                    style="color: #717182; font-size: 14px; background: none; border: none; cursor: pointer;">
+                    style="color: var(--text-secondary); font-size: 14px; background: none; border: none; cursor: pointer;">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
                     <span class="hidden sm:inline">返回首页</span>
                 </button>
-                <h1 style="font-size: clamp(16px, 4vw, 20px); font-weight: 600; color: #030213;">
+                <h1 style="font-size: clamp(16px, 4vw, 20px); font-weight: 600; color: var(--text-primary);">
                     检查报告详情
                 </h1>
             </div>
@@ -51,13 +51,13 @@
     </div>
 
     <div class="max-w-6xl mx-auto px-4 sm:px-8 py-6 sm:py-8">
-        <div class="bg-white rounded-lg p-4 sm:p-6 mb-4 sm:mb-6" style="border: 1px solid #E5E7EB;">
+        <div class="bg-white rounded-lg p-4 sm:p-6 mb-4 sm:mb-6" style="border: 1px solid var(--border);">
             <div class="flex flex-col lg:flex-row items-start justify-between gap-4 mb-4 sm:mb-6">
                 <div class="flex-1">
-                    <h2 class="mb-3 sm:mb-4" style="font-size: clamp(18px, 4vw, 22px); font-weight: 600; color: #030213;">
+                    <h2 class="mb-3 sm:mb-4" style="font-size: clamp(18px, 4vw, 22px); font-weight: 600; color: var(--text-primary);">
                         {{ ct_image.body_part or '胸部 CT' }}检查报告
                     </h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 sm:gap-y-3" style="font-size: clamp(12px, 2.5vw, 14px); color: #717182;">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 sm:gap-y-3" style="font-size: clamp(12px, 2.5vw, 14px); color: var(--text-secondary);">
                         <div class="flex items-center gap-2">
                             <i data-lucide="user" class="w-3.5 h-3.5"></i>
                             <span class="truncate">患者姓名：{{ current_user.full_name }}</span>
@@ -79,32 +79,32 @@
                 <button
                     onclick="window.print()"
                     class="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg whitespace-nowrap active:opacity-80 self-start"
-                    style="background-color: #00B42A; color: #FFFFFF; font-size: 14px; font-weight: 600; border: none; cursor: pointer;">
+                    style="background-color: var(--success); color: var(--bg-surface); font-size: 14px; font-weight: 600; border: none; cursor: pointer;">
                     <i data-lucide="download" class="w-4 h-4 sm:w-[18px] sm:h-[18px]"></i>
                     导出 PDF
                 </button>
             </div>
 
-            <div class="p-3 sm:p-4 rounded-lg" style="background-color: #E8F7F0; border: 1px solid #00B42A;">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2" style="font-size: clamp(12px, 2.5vw, 14px); color: #00B42A;">
+            <div class="p-3 sm:p-4 rounded-lg" style="background-color: var(--success-light); border: 1px solid var(--success);">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2" style="font-size: clamp(12px, 2.5vw, 14px); color: var(--success);">
                     <div class="flex items-center gap-2">
                         <i data-lucide="check-circle" class="w-4 h-4"></i>
                         <span style="font-weight: 600;">报告状态：已完成</span>
                     </div>
-                    <span style="color: #717182;">{{ ct_image.updated_at|format_datetime if ct_image.updated_at else '2026-04-10 14:30' }}</span>
+                    <span style="color: var(--text-secondary);">{{ ct_image.updated_at|format_datetime if ct_image.updated_at else '2026-04-10 14:30' }}</span>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg p-4 sm:p-6 mb-4 sm:mb-6" style="border: 1px solid #E5E7EB;">
-            <h3 class="mb-4" style="font-size: clamp(16px, 3vw, 18px); font-weight: 600; color: #030213;">
+        <div class="bg-white rounded-lg p-4 sm:p-6 mb-4 sm:mb-6" style="border: 1px solid var(--border);">
+            <h3 class="mb-4" style="font-size: clamp(16px, 3vw, 18px); font-weight: 600; color: var(--text-primary);">
                 影像浏览
             </h3>
 
             <div id="niivue-wrapper" class="bg-black rounded-lg mb-4" style="position: relative; width: 100%; height: 675px; min-height: 675px;">
                 <div id="loading-overlay" class="loading-overlay">
                     <div class="text-center">
-                        <i data-lucide="loader-2" class="w-12 h-12 animate-spin mb-4" style="color: #165DFF; margin: 0 auto;"></i>
+                        <i data-lucide="loader-2" class="w-12 h-12 animate-spin mb-4" style="color: var(--primary-text); margin: 0 auto;"></i>
                         <p>正在加载 NIfTI 图像...</p>
                     </div>
                 </div>
@@ -118,47 +118,47 @@
                 ></iframe>
             </div>
 
-            <div class="p-3 rounded-lg" style="background-color: #E8F3FF; border: 1px solid #165DFF;">
-                <p style="font-size: clamp(11px, 2.5vw, 12px); color: #165DFF; line-height: 1.6;">
+            <div class="p-3 rounded-lg" style="background-color: var(--primary); border: 1px solid var(--primary-text);">
+                <p style="font-size: clamp(11px, 2.5vw, 12px); color: var(--primary-text); line-height: 1.6;">
                     <strong>技术说明：</strong> 本报告使用 SAM-Med3D AI 辅助分割技术，由专业医生审核确认
                 </p>
             </div>
         </div>
 
         {% if ct_image.final_report %}
-        <div class="bg-white rounded-lg p-4 sm:p-6 mb-4 sm:mb-6" style="border: 1px solid #E5E7EB;">
-            <h3 class="mb-4" style="font-size: clamp(16px, 3vw, 18px); font-weight: 600; color: #030213;">
+        <div class="bg-white rounded-lg p-4 sm:p-6 mb-4 sm:mb-6" style="border: 1px solid var(--border);">
+            <h3 class="mb-4" style="font-size: clamp(16px, 3vw, 18px); font-weight: 600; color: var(--text-primary);">
                 医生诊断说明
             </h3>
 
-            <div class="mb-4 sm:mb-6 p-4 sm:p-5 rounded-lg" style="background-color: #F5F7FA; border: 1px solid #E5E7EB;">
-                <p style="font-size: clamp(13px, 2.5vw, 15px); color: #030213; line-height: 2;">
+            <div class="mb-4 sm:mb-6 p-4 sm:p-5 rounded-lg" style="background-color: var(--bg-main); border: 1px solid var(--border);">
+                <p style="font-size: clamp(13px, 2.5vw, 15px); color: var(--text-primary); line-height: 2;">
                     {{ ct_image.final_report }}
                 </p>
             </div>
         </div>
         {% endif %}
 
-        <div class="rounded-lg p-6 sm:p-8" style="background: linear-gradient(135deg, #E8F7F0 0%, #E8F3FF 100%); border: 2px solid #00B42A;">
+        <div class="rounded-lg p-6 sm:p-8" style="background: linear-gradient(135deg, var(--success-light) 0%, var(--primary) 100%); border: 2px solid var(--success);">
             <div class="flex flex-col sm:flex-row items-start gap-4 mb-4 sm:mb-6">
-                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: #00B42A;">
-                    <i data-lucide="alert-circle" class="w-5 h-5 sm:w-6 sm:h-6" style="color: #FFFFFF;"></i>
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: var(--success);">
+                    <i data-lucide="alert-circle" class="w-5 h-5 sm:w-6 sm:h-6" style="color: var(--bg-surface);"></i>
                 </div>
                 <div class="flex-1">
-                    <h3 class="mb-3" style="font-size: clamp(17px, 4vw, 20px); font-weight: 600; color: #030213;">
+                    <h3 class="mb-3" style="font-size: clamp(17px, 4vw, 20px); font-weight: 600; color: var(--text-primary);">
                         下一步诊疗指引
                     </h3>
-                    <div class="space-y-3" style="font-size: clamp(13px, 3vw, 15px); color: #030213; line-height: 1.8;">
+                    <div class="space-y-3" style="font-size: clamp(13px, 3vw, 15px); color: var(--text-primary); line-height: 1.8;">
                         <div class="flex gap-3">
-                            <span style="color: #00B42A; font-weight: 600;">1.</span>
+                            <span style="color: var(--success); font-weight: 600;">1.</span>
                             <p>建议 3 个月后复查胸部 CT，观察右肺上叶小结节变化情况</p>
                         </div>
                         <div class="flex gap-3">
-                            <span style="color: #00B42A; font-weight: 600;">2.</span>
+                            <span style="color: var(--success); font-weight: 600;">2.</span>
                             <p>如出现咳嗽、胸痛、呼吸困难等症状，请立即就医</p>
                         </div>
                         <div class="flex gap-3">
-                            <span style="color: #00B42A; font-weight: 600;">3.</span>
+                            <span style="color: var(--success); font-weight: 600;">3.</span>
                             <p>保持健康生活方式，戒烟限酒，适量运动，增强免疫力</p>
                         </div>
                     </div>
@@ -169,12 +169,12 @@
                 <button
                     onclick="window.location.href='{{ url_for('patient.question_menu') }}'"
                     class="flex-1 py-3 rounded-lg active:opacity-70"
-                    style="background-color: #FFFFFF; border: 1px solid #E5E7EB; color: #717182; font-size: 16px; cursor: pointer;">
+                    style="background-color: var(--bg-surface); border: 1px solid var(--border); color: var(--text-secondary); font-size: 16px; cursor: pointer;">
                     我有问题
                 </button>
                 <button
                     class="flex-1 py-3 rounded-lg active:opacity-80"
-                    style="background-color: #00B42A; color: #FFFFFF; font-size: 16px; font-weight: 600; border: none; cursor: pointer;">
+                    style="background-color: var(--success); color: var(--bg-surface); font-size: 16px; font-weight: 600; border: none; cursor: pointer;">
                     预约复查
                 </button>
             </div>
@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     iframe.addEventListener('error', function() {
-        loadingOverlay.innerHTML = '<div class="text-center" style="color: #F53F3F;"><p>加载失败，请刷新页面重试</p></div>';
+        loadingOverlay.innerHTML = '<div class="text-center" style="color: var(--error);"><p>加载失败，请刷新页面重试</p></div>';
     });
 });
 </script>

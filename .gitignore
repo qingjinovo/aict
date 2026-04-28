@@ -86,3 +86,7 @@ desktop.ini
 *.tmp
 *.temp
 .cache/
+DESIGN.json
+DESIGN.md
+PRODUCT.md
+ctai_backend/.impeccable-config.json

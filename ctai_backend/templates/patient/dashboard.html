@@ -1,206 +1,194 @@
 {% extends "base.html" %}
 
-{% block title %}患者端 - SAM-Med3D{% endblock %}
+{% block title %}患者中心 - SAM-Med3D{% endblock %}
 
 {% block body %}
-<div class="min-h-screen" style="background-color: #F5F7FA;">
-    <div class="page-header">
-        <div class="container">
-            <div class="flex items-center justify-between gap-3">
-                <div class="flex-1 min-w-0">
-                    <h1 class="mb-1 text-responsive-lg font-semibold" style="color: #165DFF;">
-                        SAM-Med3D 患者端
-                    </h1>
-                    <p class="truncate text-responsive-sm" style="color: #717182;">查看您的检查报告和医生留言</p>
-                </div>
-
-                <div class="flex items-center gap-2 sm:gap-4">
-                    <button class="relative p-2 rounded-lg hover:bg-gray-100" onclick="toggleNotifications()">
-                        <i data-lucide="bell" class="w-5 h-5" style="color: #717182;"></i>
-                        {% if unread_notifications %}
-                        <span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full" style="background-color: #F53F3F;"></span>
-                        {% endif %}
-                    </button>
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: #E8F3FF;">
-                            <i data-lucide="user" class="w-4 h-4" style="color: #165DFF;"></i>
-                        </div>
-                        <div class="hidden sm:block">
-                            <p class="text-responsive-sm font-medium" style="color: #030213;">{{ current_user.full_name }}</p>
-                            <p class="text-xs" style="color: #717182;">{{ current_user.phone or '' }}</p>
-                        </div>
-                    </div>
-                    <button
-                        onclick="showLogoutModal()"
-                        class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all hover:bg-gray-100 text-responsive-sm"
-                        style="color: #717182; background: none; border: none; cursor: pointer;"
-                    >
-                        <i data-lucide="log-out" class="w-4 h-4"></i>
-                        <span class="hidden sm:inline">退出</span>
-                    </button>
-                </div>
-            </div>
+<div class="page-layout">
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h1 class="sidebar-logo">SAM-Med3D</h1>
+        </div>
+        <ul class="sidebar-nav">
+            <li class="sidebar-item sidebar-active">
+                <a href="{{ url_for('patient.dashboard') }}" class="sidebar-link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1"/>
+                    </svg>
+                    我的首页
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{{ url_for('patient.upload') }}" class="sidebar-link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17,8 12,3 7,8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    上传影像
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{{ url_for('patient.question_menu') }}" class="sidebar-link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    问题菜单
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{{ url_for('patient.ai_chat') }}" class="sidebar-link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    AI 助手
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{{ url_for('patient.contact_doctor') }}" class="sidebar-link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <line x1="19" y1="8" x2="19" y2="14"/>
+                        <line x1="22" y1="11" x2="16" y2="11"/>
+                    </svg>
+                    联系医生
+                </a>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16,17 21,12 16,7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                退出登录
+            </a>
         </div>
     </div>
 
-    <div class="page-content">
-        <div class="container">
-            {% if reports %}
-            {% set latest_report = reports[0] %}
-            <div class="mb-5 sm:mb-6">
-                <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-responsive-base font-semibold" style="color: #030213;">
-                        最新报告
-                    </h2>
-                    {% if latest_report.status == 'completed' %}
-                    <span class="px-2.5 py-1 rounded-full text-xs" style="background-color: #FFF3E8; color: #FF7D00;">
-                        有新消息
-                    </span>
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
+    <div class="main-content">
+        <header class="header">
+            <button class="sidebar-toggle md:hidden" id="sidebar-toggle" aria-label="切换侧边栏">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+            </button>
+            <div class="flex items-center gap-3 sm:gap-4">
+                <h2 class="text-lg font-semibold">
+                    你好，{{ current_user.full_name }}
+                </h2>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button class="avatar" aria-label="User menu">
+                    {{ current_user.full_name[0] if current_user.full_name else 'U' }}
+                </button>
+            </div>
+        </header>
+
+        <main class="content-area">
+            {% if latest_report %}
+                <div class="card mb-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <div class="text-sm text-secondary mb-1">最新检查</div>
+                            <h3 class="text-xl font-semibold">{{ latest_report.imaging_type or 'CT影像检查' }}</h3>
+                            <p class="text-sm text-secondary mt-1">{{ latest_report.created_at.strftime('%Y年%m月%d日') if latest_report.created_at else '日期未知' }}</p>
+                        </div>
+                        <div class="flex flex-col items-start sm:items-end gap-2">
+                            <span class="badge badge-{% if latest_report.status == 'completed' %}success{% elif latest_report.status in ['ai_processing', 'ai_completed', 'doctor_annotating', 'doctor_reviewing'] %}primary{% else %}warning{% endif %}">
+                                {{ {'uploaded': '已上传', 'notifying': '通知中', 'doctor_reviewing': '医生审核中', 'ai_processing': 'AI处理中', 'ai_completed': 'AI完成', 'doctor_annotating': '医生标注中', 'ai_annotated': 'AI标注完成', 'pending_confirmation': '待确认', 'completed': '已完成'}[latest_report.status] }}
+                            </span>
+                            <a href="{{ url_for('patient.report', report_id=latest_report.id) }}" class="btn btn-secondary">
+                                查看报告详情
+                            </a>
+                        </div>
+                    </div>
+                    {% if latest_report.findings_summary %}
+                        <div class="mt-4" style="padding-top: var(--spacing-md); border-top: 1px solid var(--border);">
+                            <p class="text-sm" style="color: var(--text-primary); line-height: 1.6;">{{ latest_report.findings_summary[:150] }}...</p>
+                        </div>
                     {% endif %}
                 </div>
-
-                <div
-                    class="bg-white rounded-xl p-4 sm:p-5 cursor-pointer hover:shadow-md transition-all active:opacity-80"
-                    style="border: 2px solid #165DFF;"
-                    onclick="window.location.href='{{ url_for('patient.report', report_id=latest_report.id) }}'"
-                >
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                        <div class="flex gap-3 sm:gap-4 flex-1 w-full sm:w-auto">
-                            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: #E8F3FF;">
-                                <i data-lucide="file-text" class="w-7 h-7 sm:w-8 sm:h-8" style="color: #165DFF;"></i>
-                            </div>
-
-                            <div class="flex-1 min-w-0">
-                                <h3 class="mb-1.5 text-responsive-base font-semibold" style="color: #030213;">
-                                    {{ latest_report.body_part or 'CT' }} CT 检查报告
-                                </h3>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-responsive-xs" style="color: #717182;">
-                                    <div class="flex items-center gap-1.5">
-                                        <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
-                                        <span class="truncate">检查日期：{{ latest_report.created_at|format_datetime if latest_report.created_at else '未知' }}</span>
-                                    </div>
-                                    <div class="flex items-center gap-1.5">
-                                        <i data-lucide="user" class="w-3.5 h-3.5"></i>
-                                        <span class="truncate">诊断医生：{{ latest_report.doctor.full_name if latest_report.doctor else '待分配' }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-2 self-end sm:self-auto">
-                            <i data-lucide="chevron-right" class="sm:hidden" style="color: #717182;"></i>
-                        </div>
+            {% else %}
+                <div class="card text-center mb-6" style="padding: var(--spacing-xxl) var(--spacing-xl);">
+                    <div class="rounded-lg p-4 mx-auto mb-4" style="width: 80px; height: 80px; background-color: var(--primary);">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-text); margin: 0 auto; display: block;">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <path d="M21 15l-5-5L5 21"/>
+                        </svg>
                     </div>
+                    <h3 class="text-xl font-semibold mb-2">暂无影像报告</h3>
+                    <p class="text-secondary mb-6" style="max-width: 360px; margin: 0 auto; line-height: 1.6;">
+                        上传您的 CT 影像，医生将进行审核并生成诊断报告。
+                    </p>
+                    <a href="{{ url_for('patient.upload') }}" class="btn btn-primary">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17,8 12,3 7,8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        上传影像
+                    </a>
                 </div>
-            </div>
             {% endif %}
 
-            <div>
-                <h2 class="mb-3 text-responsive-base font-semibold" style="color: #030213;">
-                    历史报告
-                </h2>
-
-                {% if reports and reports|length > 1 %}
-                <div class="space-y-2.5">
-                    {% for report in reports[1:] %}
-                    <div
-                        class="bg-white rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 cursor-pointer hover:shadow-sm transition-all active:opacity-80"
-                        style="border: 1px solid #E5E7EB;"
-                        onclick="window.location.href='{{ url_for('patient.report', report_id=report.id) }}'"
-                    >
-                        <div class="flex items-center gap-3 w-full sm:w-auto">
-                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center flex-shrink-0" style="background-color: #F5F7FA;">
-                                <i data-lucide="file-text" class="w-5 h-5 sm:w-6 sm:h-6" style="color: #717182;"></i>
-                            </div>
-
-                            <div class="flex-1 min-w-0">
-                                <h3 class="text-responsive-sm font-medium" style="color: #030213; margin-bottom: 2px;">
-                                    {{ report.body_part or 'CT' }} CT 检查报告
-                                </h3>
-                                <div class="flex flex-col sm:flex-row sm:gap-3 gap-0.5 text-responsive-xs" style="color: #717182;">
-                                    <span class="truncate">检查日期：{{ report.created_at|format_datetime if report.created_at else '未知' }}</span>
-                                    <span class="hidden sm:inline">·</span>
-                                    <span class="truncate">医生：{{ report.doctor.full_name if report.doctor else '待分配' }}</span>
+            {% if history_reports %}
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">历史报告</h3>
+                    <div style="display: flex; flex-direction: column; gap: var(--spacing-md);">
+                        {% for report in history_reports %}
+                            <a href="{{ url_for('patient.report', report_id=report.id) }}" class="card p-4" style="display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-md); transition: transform var(--transition-fast), box-shadow var(--transition-fast);">
+                                <div>
+                                    <div class="font-medium text-base">{{ report.imaging_type or 'CT影像检查' }}</div>
+                                    <div class="text-xs text-secondary mt-1">{{ report.created_at.strftime('%Y年%m月%d日') if report.created_at else '日期未知' }}</div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-2 self-end sm:self-auto">
-                            <span class="px-2.5 py-1 rounded text-xs" style="background-color: #F5F7FA; color: #717182; font-size: 11px;">
-                                {{ '已完成' if report.status == 'completed' else '处理中' }}
-                            </span>
-                            <i data-lucide="chevron-right" class="w-4 h-4 flex-shrink-0" style="color: #717182;"></i>
-                        </div>
+                                <div class="flex items-center gap-3">
+                                    <span class="badge badge-{% if report.status == 'completed' %}success{% elif report.status in ['ai_processing', 'ai_completed'] %}primary{% else %}warning{% endif %}">
+                                        {{ {'uploaded': '已上传', 'notifying': '通知中', 'doctor_reviewing': '审核中', 'ai_processing': 'AI处理中', 'ai_completed': 'AI完成', 'doctor_annotating': '标注中', 'ai_annotated': 'AI标注完成', 'pending_confirmation': '待确认', 'completed': '已完成'}[report.status] }}
+                                    </span>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);">
+                                        <polyline points="9,18 15,12 9,6"/>
+                                    </svg>
+                                </div>
+                            </a>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
-                {% elif reports %}
-                <div style="text-align: center; padding: 40px 20px;">
-                    <i data-lucide="folder-open" class="w-12 h-12" style="color: #717182; margin-bottom: 12px;"></i>
-                    <p style="font-size: 14px; color: #717182;">暂无其他报告</p>
+            {% endif %}
+
+            {% if not latest_report and not history_reports %}
+                <div class="text-center" style="padding: var(--spacing-xl) 0;">
+                    <p class="text-secondary">完成首次上传后，您的报告将在这里显示</p>
                 </div>
-                {% else %}
-                <div style="text-align: center; padding: 40px 20px;">
-                    <i data-lucide="folder-open" class="w-12 h-12" style="color: #717182; margin-bottom: 12px;"></i>
-                    <p style="font-size: 14px; color: #717182;">暂无检查报告</p>
-                    <p style="font-size: 13px; color: #717182; margin-top: 6px;">请前往医院进行检查</p>
-                </div>
-                {% endif %}
-            </div>
-
-            <div class="mt-5 sm:mt-6 p-4 sm:p-5 rounded-lg" style="background-color: #E8F3FF; border: 1px solid #165DFF;">
-                <h3 class="mb-2 text-responsive-sm font-semibold" style="color: #165DFF;">
-                    温馨提示
-                </h3>
-                <ul class="space-y-1.5 text-responsive-xs" style="color: #717182; line-height: 1.6;">
-                    <li>• 报告由 SAM-Med3D AI 辅助医生完成分割标注，确保诊断准确性</li>
-                    <li>• 请仔细阅读医生留言中的诊疗建议</li>
-                    <li>• 如有疑问，请及时联系主治医生或前往医院咨询</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <button
-        onclick="window.location.href='{{ url_for('patient.upload') }}'"
-        class="fab fab-primary"
-        title="上传CT图像"
-    >
-        <i data-lucide="plus" class="w-5 h-5 sm:w-6 sm:h-6" style="color: #FFFFFF;"></i>
-    </button>
-</div>
-
-<div id="notification-panel" class="fixed top-0 right-0 w-80 sm:w-96 h-full bg-white shadow-lg" style="display: none; z-index: 50;">
-    <div class="p-4 flex justify-between items-center" style="border-bottom: 1px solid #E5E7EB;">
-        <h3 class="text-responsive-base font-semibold" style="color: #030213;">通知</h3>
-        <button onclick="toggleNotifications()" class="p-1.5 rounded-lg hover:bg-gray-100">
-            <i data-lucide="x" class="w-5 h-5" style="color: #717182;"></i>
-        </button>
-    </div>
-    <div style="overflow-y: auto; height: calc(100% - 60px);">
-        {% for notification in unread_notifications %}
-        <div class="p-4" style="border-bottom: 1px solid #E5E7EB;">
-            <p class="text-responsive-sm font-medium" style="color: #030213; margin-bottom: 4px;">{{ notification.title }}</p>
-            <p class="text-responsive-xs" style="color: #717182;">{{ notification.content }}</p>
-            <p class="text-responsive-xs" style="color: #717182; margin-top: 6px;">{{ notification.created_at|format_datetime if notification.created_at else '' }}</p>
-        </div>
-        {% else %}
-        <div style="padding: 40px 16px; text-align: center;">
-            <i data-lucide="bell-off" class="w-10 h-10" style="color: #717182; margin-bottom: 10px;"></i>
-            <p class="text-responsive-sm" style="color: #717182;">暂无新通知</p>
-        </div>
-        {% endfor %}
+            {% endif %}
+        </main>
     </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
+{{ super() }}
 <script>
-    function toggleNotifications() {
-        const panel = document.getElementById('notification-panel');
-        if (panel.style.display === 'none') {
-            panel.style.display = 'block';
-        } else {
-            panel.style.display = 'none';
-        }
+    function closeSidebar() {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebar-backdrop').classList.remove('open');
     }
+
+    document.getElementById('sidebar-toggle')?.addEventListener('click', function() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('sidebar-backdrop').classList.toggle('open');
+    });
 </script>
 {% endblock %}

@@ -3,13 +3,13 @@
 {% block title %}上传CT图像 - SAM-Med3D{% endblock %}
 
 {% block body %}
-<div class="min-h-screen" style="background-color: #F5F7FA;">
-    <div class="bg-white px-4 sm:px-8 py-4" style="border-bottom: 1px solid #E5E7EB;">
-        <div class="max-w-4xl mx-auto">
+<div class="min-h-screen" style="background-color: var(--bg-main);">
+    <div class="page-header">
+        <div class="container">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 style="font-size: clamp(16px, 4vw, 20px); font-weight: 600; color: #030213;">上传CT图像</h1>
-                    <p class="text-responsive-sm" style="color: #717182; margin-top: 2px;">为患者上传CT检查图像</p>
+                    <h1 class="text-xl font-semibold" style="color: var(--text-primary);">上传CT图像</h1>
+                    <p class="text-sm" style="color: var(--text-secondary); margin-top: 2px;">为患者上传CT检查图像</p>
                 </div>
                 <button onclick="window.location.href='{{ url_for('doctor.dashboard') }}'" class="btn btn-secondary btn-sm">
                     <i data-lucide="arrow-left" class="w-4 h-4"></i>
@@ -19,68 +19,70 @@
         </div>
     </div>
 
-    <div class="max-w-4xl mx-auto px-4 sm:px-8 py-6 sm:py-8">
-        <div class="bg-white rounded-lg p-6 sm:p-8" style="border: 1px solid #E5E7EB;">
-            <form id="upload-form" method="POST" action="{{ url_for('patient.upload') }}" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label class="form-label">CT图像文件 <span style="color: #F53F3F;">*</span></label>
-                    <div id="drop-zone"
-                         onclick="document.getElementById('ct_file').click();"
-                         style="border: 2px dashed #E5E7EB; border-radius: 12px; padding: 32px 16px; text-align: center; cursor: pointer; transition: all 0.2s; background-color: #FAFAFA;"
-                         onmouseenter="this.style.borderColor='#165DFF'; this.style.backgroundColor='#E8F3FF';"
-                         onmouseleave="this.style.borderColor='#E5E7EB'; this.style.backgroundColor='#FAFAFA';">
-                        <input type="file" id="ct_file" name="ct_file" style="display: none;" accept=".png,.jpg,.jpeg,.dcm,.nifti,.nii,.gz" onchange="handleFileSelect(this);" />
+    <div class="page-content">
+        <div class="container container-sm">
+            <div class="card p-6 sm:p-8">
+                <form id="upload-form" method="POST" action="{{ url_for('doctor.upload') }}" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label class="form-label">CT图像文件 <span style="color: var(--error);">*</span></label>
+                        <div id="drop-zone"
+                             onclick="document.getElementById('ct_file').click();"
+                             style="border: 2px dashed var(--border); border-radius: var(--radius-xl); padding: var(--spacing-xl) var(--spacing-md); text-align: center; cursor: pointer; transition: all 0.2s; background-color: var(--bg-surface);"
+                             onmouseenter="this.style.borderColor='var(--primary-text)'; this.style.backgroundColor='var(--primary)';"
+                             onmouseleave="this.style.borderColor='var(--border)'; this.style.backgroundColor='var(--bg-surface)';">
+                            <input type="file" id="ct_file" name="ct_file" style="display: none;" accept=".png,.jpg,.jpeg,.dcm,.nifti,.nii,.gz" onchange="handleFileSelect(this);" />
 
-                        <div id="upload-placeholder">
-                            <i data-lucide="upload-cloud" class="w-12 h-12 sm:w-14 sm:h-14" style="color: #717182; margin-bottom: 12px;"></i>
-                            <p style="font-size: 14px; font-weight: 500; color: #030213; margin-bottom: 8px;">点击或拖拽文件到此处上传</p>
-                            <p style="font-size: 12px; color: #717182;">支持 PNG, JPG, DICOM, NIfTI 格式</p>
+                            <div id="upload-placeholder">
+                                <i data-lucide="upload-cloud" class="w-12 h-12 sm:w-14 sm:h-14" style="color: var(--text-secondary); margin-bottom: 12px;"></i>
+                                <p style="font-size: var(--font-size-base); font-weight: 500; color: var(--text-primary); margin-bottom: 8px;">点击或拖拽文件到此处上传</p>
+                                <p style="font-size: var(--font-size-xs); color: var(--text-secondary);">支持 PNG, JPG, DICOM, NIfTI 格式</p>
+                            </div>
+
+                            <div id="file-preview" style="display: none;">
+                                <i data-lucide="file-check" class="w-12 h-12 sm:w-14 sm:h-14" style="color: var(--success); margin-bottom: 12px;"></i>
+                                <p id="file-name" style="font-size: var(--font-size-base); font-weight: 500; color: var(--text-primary); margin-bottom: 8px;"></p>
+                                <p id="file-size" style="font-size: var(--font-size-xs); color: var(--text-secondary);"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                        <div class="form-group">
+                            <label class="form-label">检查部位 <span style="color: var(--error);">*</span></label>
+                            <select name="body_part" class="input" required style="height: 44px;">
+                                <option value="">请选择检查部位</option>
+                                <option value="头部">头部</option>
+                                <option value="胸部">胸部</option>
+                                <option value="腹部">腹部</option>
+                                <option value="盆腔">盆腔</option>
+                                <option value="脊椎">脊椎</option>
+                                <option value="四肢">四肢</option>
+                                <option value="全身">全身</option>
+                            </select>
                         </div>
 
-                        <div id="file-preview" style="display: none;">
-                            <i data-lucide="file-check" class="w-12 h-12 sm:w-14 sm:h-14" style="color: #00B42A; margin-bottom: 12px;"></i>
-                            <p id="file-name" style="font-size: 14px; font-weight: 500; color: #030213; margin-bottom: 8px;"></p>
-                            <p id="file-size" style="font-size: 12px; color: #717182;"></p>
+                        <div class="form-group">
+                            <label class="form-label">患者姓名</label>
+                            <input type="text" name="patient_name" class="input" placeholder="请输入患者姓名" style="height: 44px;" />
                         </div>
                     </div>
-                </div>
-
-                <div class="grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
-                    <div class="form-group">
-                        <label class="form-label">检查部位 <span style="color: #F53F3F;">*</span></label>
-                        <select name="body_part" class="input" required style="height: 44px;">
-                            <option value="">请选择检查部位</option>
-                            <option value="头部">头部</option>
-                            <option value="胸部">胸部</option>
-                            <option value="腹部">腹部</option>
-                            <option value="盆腔">盆腔</option>
-                            <option value="脊椎">脊椎</option>
-                            <option value="四肢">四肢</option>
-                            <option value="全身">全身</option>
-                        </select>
-                    </div>
 
                     <div class="form-group">
-                        <label class="form-label">患者姓名</label>
-                        <input type="text" name="patient_name" class="input" placeholder="请输入患者姓名" style="height: 44px;" />
+                        <label class="form-label">检查描述（可选）</label>
+                        <textarea name="description" class="input" rows="3" placeholder="请输入检查描述或临床诊断信息..."></textarea>
                     </div>
-                </div>
 
-                <div class="form-group">
-                    <label class="form-label">检查描述（可选）</label>
-                    <textarea name="description" class="input" rows="3" placeholder="请输入检查描述或临床诊断信息..."></textarea>
-                </div>
-
-                <div class="flex flex-col sm:flex-row gap-3">
-                    <button type="submit" class="btn btn-primary btn-lg flex-1" style="height: 48px;">
-                        <i data-lucide="upload" class="w-5 h-5"></i>
-                        开始上传
-                    </button>
-                    <button type="button" onclick="window.location.href='{{ url_for('doctor.dashboard') }}'" class="btn btn-secondary btn-lg" style="height: 48px;">
-                        取消
-                    </button>
-                </div>
-            </form>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button type="submit" class="btn btn-primary btn-lg flex-1" style="height: 48px;">
+                            <i data-lucide="upload" class="w-5 h-5"></i>
+                            开始上传
+                        </button>
+                        <button type="button" onclick="window.location.href='{{ url_for('doctor.dashboard') }}'" class="btn btn-secondary btn-lg" style="height: 48px;">
+                            取消
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>

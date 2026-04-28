@@ -39,11 +39,55 @@ def dashboard():
                          unread_count=unread_count,
                          unread_notifications=unread_notifications)
 
-@doctor_bp.route('/doctor/upload')
+@doctor_bp.route('/doctor/upload', methods=['GET', 'POST'])
 @login_required
 def upload():
     if not current_user.is_doctor():
         return redirect(url_for('auth.role_selection'))
+    if request.method == 'POST':
+        if 'ct_file' not in request.files:
+            flash('请选择CT图像文件', 'error')
+            return redirect(url_for('doctor.upload'))
+
+        file = request.files['ct_file']
+        if file.filename == '':
+            flash('请选择CT图像文件', 'error')
+            return redirect(url_for('doctor.upload'))
+
+        body_part = request.form.get('body_part', '')
+        patient_name = request.form.get('patient_name', '')
+        description = request.form.get('description', '')
+
+        if not body_part:
+            flash('请选择检查部位', 'error')
+            return redirect(url_for('doctor.upload'))
+
+        allowed_extensions = {'.png', '.jpg', '.jpeg', '.dcm', '.nifti', '.nii', '.gz'}
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in allowed_extensions:
+            flash('不支持的文件格式', 'error')
+            return redirect(url_for('doctor.upload'))
+
+        upload_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'uploads', 'ct_images')
+        os.makedirs(upload_dir, exist_ok=True)
+        filename = f"{current_user.id}_{file.filename}"
+        file_path = os.path.join(upload_dir, filename)
+        file.save(file_path)
+
+        ct_image = CTImage(
+            patient_id=current_user.id,
+            file_path=file_path,
+            uploaded_by=current_user.id,
+            status='pending',
+            imaging_type=f'CT - {body_part}',
+            description=description
+        )
+        db.session.add(ct_image)
+        db.session.commit()
+
+        flash('CT图像上传成功', 'success')
+        return redirect(url_for('doctor.dashboard'))
+
     return render_template('doctor/upload.html')
 
 @doctor_bp.route('/doctor/processing/<int:report_id>')

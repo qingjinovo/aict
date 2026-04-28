@@ -3,13 +3,13 @@
 {% block title %}报告确认 - SAM-Med3D{% endblock %}
 
 {% block body %}
-<div class="min-h-screen" style="background-color: #F5F7FA;">
-    <div class="bg-white px-4 sm:px-8 py-4" style="border-bottom: 1px solid #E5E7EB;">
+<div class="min-h-screen" style="background-color: var(--bg-main);">
+    <div class="bg-white px-4 sm:px-8 py-4" style="border-bottom: 1px solid var(--border);">
         <div class="max-w-7xl mx-auto">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 style="font-size: clamp(16px, 4vw, 20px); font-weight: 600; color: #030213;">确认报告</h1>
-                    <p class="text-responsive-sm" style="color: #717182; margin-top: 2px;">审核AI分析结果并提交最终诊断</p>
+                    <h1 style="font-size: clamp(16px, 4vw, 20px); font-weight: 600; color: var(--text-primary);">确认报告</h1>
+                    <p class="text-responsive-sm" style="color: var(--text-secondary); margin-top: 2px;">审核AI分析结果并提交最终诊断</p>
                 </div>
                 <button onclick="window.location.href='{{ url_for('doctor.dashboard') }}'" class="btn btn-secondary btn-sm">
                     <i data-lucide="arrow-left" class="w-4 h-4"></i>
@@ -32,9 +32,9 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
             <div class="lg:col-span-3">
-                <div class="bg-white rounded-lg p-4 sm:p-6 mb-4" style="border: 1px solid #E5E7EB;">
-                    <h3 class="mb-4 flex items-center gap-2" style="font-size: 16px; font-weight: 600; color: #030213;">
-                        <i data-lucide="sparkles" class="w-5 h-5" style="color: #165DFF;"></i>
+                <div class="bg-white rounded-lg p-4 sm:p-6 mb-4" style="border: 1px solid var(--border);">
+                    <h3 class="mb-4 flex items-center gap-2" style="font-size: 16px; font-weight: 600; color: var(--text-primary);">
+                        <i data-lucide="sparkles" class="w-5 h-5" style="color: var(--primary-text);"></i>
                         AI标注结果
                     </h3>
 
@@ -47,17 +47,17 @@
                             frameborder="0"
                         ></iframe>
                     </div>
-                    <div class="p-3 rounded-lg flex items-center gap-2" style="background-color: #E8F3FF; border: 1px solid #165DFF;">
-                        <i data-lucide="check-circle" class="w-5 h-5" style="color: #165DFF;"></i>
-                        <span style="font-size: 13px; color: #165DFF;">AI标注已完成，请查看上方结果</span>
+                    <div class="p-3 rounded-lg flex items-center gap-2" style="background-color: var(--primary); border: 1px solid var(--primary-text);">
+                        <i data-lucide="check-circle" class="w-5 h-5" style="color: var(--primary-text);"></i>
+                        <span style="font-size: 13px; color: var(--primary-text);">AI标注已完成，请查看上方结果</span>
                     </div>
                     {% else %}
-                    <div class="text-center py-8" style="color: #717182;">
+                    <div class="text-center py-8" style="color: var(--text-secondary);">
                         <i data-lucide="cpu" class="w-12 h-12 mb-3 mx-auto" style="color: #ccc;"></i>
                         <p style="font-size: 14px; margin-bottom: 16px;">点击下方按钮启动AI标注</p>
                         <form method="POST" style="display: inline;">
                             <input type="hidden" name="action" value="ai_annotate">
-                            <button type="submit" id="ai-annotate-btn" class="flex items-center justify-center gap-2 rounded-lg mx-auto" style="background-color: #165DFF; color: #FFFFFF; font-size: 14px; font-weight: 600; height: 44px; padding: 0 24px; border: none; cursor: pointer;">
+                            <button type="submit" id="ai-annotate-btn" class="flex items-center justify-center gap-2 rounded-lg mx-auto" style="background-color: var(--primary-text); color: var(--bg-surface); font-size: 14px; font-weight: 600; height: 44px; padding: 0 24px; border: none; cursor: pointer;">
                                 <i data-lucide="sparkles" class="w-5 h-5"></i>
                                 启动AI标注
                             </button>
@@ -66,9 +66,9 @@
                     {% endif %}
                 </div>
 
-                <div class="bg-white rounded-lg p-4 sm:p-6" style="border: 1px solid #E5E7EB;">
-                    <h3 class="mb-4 flex items-center gap-2" style="font-size: 16px; font-weight: 600; color: #030213;">
-                        <i data-lucide="pen-tool" class="w-5 h-5" style="color: #717182;"></i>
+                <div class="bg-white rounded-lg p-4 sm:p-6" style="border: 1px solid var(--border);">
+                    <h3 class="mb-4 flex items-center gap-2" style="font-size: 16px; font-weight: 600; color: var(--text-primary);">
+                        <i data-lucide="pen-tool" class="w-5 h-5" style="color: var(--text-secondary);"></i>
                         医生标注
                     </h3>
                     {% if ct_image.annotation_file_path %}
@@ -77,9 +77,9 @@
                         <span style="font-size: 13px; color: #4CAF50;">医生标注已保存</span>
                     </div>
                     {% else %}
-                    <div class="text-center py-4" style="color: #717182;">
+                    <div class="text-center py-4" style="color: var(--text-secondary);">
                         <p style="font-size: 14px;">请先在标注页面完成标注</p>
-                        <a href="{{ url_for('doctor.annotate', report_id=ct_image.id) }}" class="inline-flex items-center gap-2 mt-3 rounded-lg" style="background-color: #FF9800; color: #FFFFFF; font-size: 14px; padding: 8px 16px; text-decoration: none;">
+                        <a href="{{ url_for('doctor.annotate', report_id=ct_image.id) }}" class="inline-flex items-center gap-2 mt-3 rounded-lg" style="background-color: #FF9800; color: var(--bg-surface); font-size: 14px; padding: 8px 16px; text-decoration: none;">
                             <i data-lucide="pen-tool" class="w-4 h-4"></i>
                             去标注
                         </a>
@@ -89,30 +89,30 @@
             </div>
 
             <div class="lg:col-span-2">
-                <form method="POST" class="bg-white rounded-lg p-4 sm:p-6 mb-4" style="border: 1px solid #E5E7EB;">
-                    <h3 class="mb-4 flex items-center gap-2" style="font-size: 16px; font-weight: 600; color: #030213;">
-                        <i data-lucide="file-text" class="w-5 h-5" style="color: #717182;"></i>
+                <form method="POST" class="bg-white rounded-lg p-4 sm:p-6 mb-4" style="border: 1px solid var(--border);">
+                    <h3 class="mb-4 flex items-center gap-2" style="font-size: 16px; font-weight: 600; color: var(--text-primary);">
+                        <i data-lucide="file-text" class="w-5 h-5" style="color: var(--text-secondary);"></i>
                         最终诊断报告
                     </h3>
 
                     <div class="form-group">
                         <label class="form-label">检查信息</label>
-                        <div class="p-4 rounded-lg" style="background-color: #F5F7FA; font-size: 13px;">
+                        <div class="p-4 rounded-lg" style="background-color: var(--bg-main); font-size: 13px;">
                             <div class="mb-2">
-                                <span style="color: #717182;">患者: </span>
-                                <span style="color: #030213; font-weight: 500;">{{ ct_image.patient.full_name if ct_image.patient else '未知' }}</span>
+                                <span style="color: var(--text-secondary);">患者: </span>
+                                <span style="color: var(--text-primary); font-weight: 500;">{{ ct_image.patient.full_name if ct_image.patient else '未知' }}</span>
                             </div>
                             <div class="mb-2">
-                                <span style="color: #717182;">检查部位: </span>
-                                <span style="color: #030213;">{{ ct_image.body_part or '未知' }}</span>
+                                <span style="color: var(--text-secondary);">检查部位: </span>
+                                <span style="color: var(--text-primary);">{{ ct_image.body_part or '未知' }}</span>
                             </div>
                             <div class="mb-2">
-                                <span style="color: #717182;">状态: </span>
-                                <span style="color: #165DFF; font-weight: 500;">{{ ct_image.status }}</span>
+                                <span style="color: var(--text-secondary);">状态: </span>
+                                <span style="color: var(--primary-text); font-weight: 500;">{{ {'uploaded': '已上传', 'notifying': '通知中', 'doctor_reviewing': '医生审核中', 'ai_processing': 'AI处理中', 'ai_completed': 'AI完成', 'doctor_annotating': '医生标注中', 'ai_annotated': 'AI标注完成', 'pending_confirmation': '待确认', 'completed': '已完成'}[ct_image.status] if ct_image.status in ['uploaded', 'notifying', 'doctor_reviewing', 'ai_processing', 'ai_completed', 'doctor_annotating', 'ai_annotated', 'pending_confirmation', 'completed'] else ct_image.status }}</span>
                             </div>
                             <div>
-                                <span style="color: #717182;">检查日期: </span>
-                                <span style="color: #030213;">{{ ct_image.created_at.strftime('%Y-%m-%d %H:%M') if ct_image.created_at else '未知' }}</span>
+                                <span style="color: var(--text-secondary);">检查日期: </span>
+                                <span style="color: var(--text-primary);">{{ ct_image.created_at.strftime('%Y-%m-%d %H:%M') if ct_image.created_at else '未知' }}</span>
                             </div>
                         </div>
                     </div>
@@ -125,10 +125,18 @@
                             rows="6"
                             placeholder="请输入结构化诊断报告..."
                             style="font-size: 13px; line-height: 1.6;"
-                        >{% if ct_image.final_report %}{{ ct_image.final_report }}{% else %}CT检查所见：
+                        >{% if ct_image.final_report %}{{ ct_image.final_report }}{% else %}{% set body_part = (ct_image.body_part or '').lower() %}{% if '胸' in body_part or '肺' in body_part %}CT检查所见：
 双肺纹理清晰，未见明显异常密度影。双肺门结构正常。纵隔居中，未见肿大淋巴结。心脏形态正常。
-
-片内所示腹部实质脏器未见明显异常。{% endif %}</textarea>
+{% elif '腹' in body_part or '肝' in body_part or '胆' in body_part %}CT检查所见：
+肝脏形态大小正常，肝实质密度均匀，未见明显异常密度影。胆囊不大，壁不厚。脾脏不大。胰腺形态正常。双肾大小形态正常。
+{% elif '头' in body_part or '颅' in body_part or '脑' in body_part %}CT检查所见：
+颅骨未见明显异常。脑实质内未见明显异常密度影。脑室系统大小正常。中线结构居中。脑沟脑裂未见明显增宽。
+{% elif '颈' in body_part %}CT检查所见：
+颈椎生理曲度正常。椎体未见明显异常。椎间盘未见明显突出。椎管未见明显狭窄。颈部软组织未见明显异常。
+{% elif '腰' in body_part or '椎' in body_part %}CT检查所见：
+腰椎生理曲度正常。椎体形态正常，未见明显骨质增生。椎间盘未见明显突出。椎管未见明显狭窄。
+{% else %}CT检查所见：
+扫描区域结构正常，未见明显异常密度影。周围软组织未见明显异常。{% endif %}{% endif %}</textarea>
                     </div>
 
                     <div class="form-group">
@@ -139,36 +147,41 @@
                             rows="3"
                             placeholder="请输入诊断结论..."
                             style="font-size: 13px; line-height: 1.6;"
-                        >{% if ct_image.final_diagnosis %}{{ ct_image.final_diagnosis }}{% else %}1. 胸部CT平扫未见明显异常
-2. 建议定期随诊复查{% endif %}</textarea>
+                        >{% if ct_image.final_diagnosis %}{{ ct_image.final_diagnosis }}{% else %}{% set body_part = (ct_image.body_part or '').lower() %}{% if '胸' in body_part or '肺' in body_part %}1. 胸部CT平扫未见明显异常
+2. 建议定期随诊复查{% elif '腹' in body_part or '肝' in body_part or '胆' in body_part %}1. 腹部CT平扫未见明显异常
+2. 建议定期随诊复查{% elif '头' in body_part or '颅' in body_part or '脑' in body_part %}1. 头颅CT平扫未见明显异常
+2. 建议定期随诊复查{% elif '颈' in body_part %}1. 颈椎CT平扫未见明显异常
+2. 建议定期随诊复查{% elif '腰' in body_part or '椎' in body_part %}1. 腰椎CT平扫未见明显异常
+2. 建议定期随诊复查{% else %}1. CT平扫未见明显异常
+2. 建议定期随诊复查{% endif %}{% endif %}</textarea>
                     </div>
 
                     <div class="flex flex-col gap-2">
                         <input type="hidden" name="action" value="submit_report">
-                        <button type="submit" class="w-full flex items-center justify-center gap-2 rounded-lg active:opacity-80" style="background-color: #00B42A; color: #FFFFFF; font-size: 14px; font-weight: 600; height: 48px; border: none; cursor: pointer;">
+                        <button type="submit" class="w-full flex items-center justify-center gap-2 rounded-lg active:opacity-80" style="background-color: var(--success); color: var(--bg-surface); font-size: 14px; font-weight: 600; height: 48px; border: none; cursor: pointer;">
                             <i data-lucide="check" class="w-5 h-5"></i>
                             确认并提交
                         </button>
-                        <button type="button" onclick="window.location.href='{{ url_for('doctor.annotate', report_id=ct_image.id) }}'" class="w-full flex items-center justify-center gap-2 rounded-lg" style="background-color: #FFFFFF; color: #717182; font-size: 14px; height: 48px; border: 1px solid #E5E7EB; cursor: pointer;">
+                        <button type="button" onclick="window.location.href='{{ url_for('doctor.annotate', report_id=ct_image.id) }}'" class="w-full flex items-center justify-center gap-2 rounded-lg" style="background-color: var(--bg-surface); color: var(--text-secondary); font-size: 14px; height: 48px; border: 1px solid var(--border); cursor: pointer;">
                             <i data-lucide="arrow-left" class="w-4 h-4"></i>
                             返回修改标注
                         </button>
                     </div>
                 </form>
 
-                <div class="bg-white rounded-lg p-4 sm:p-6" style="border: 1px solid #E5E7EB;">
-                    <h3 class="mb-4 flex items-center gap-2" style="font-size: 16px; font-weight: 600; color: #030213;">
-                        <i data-lucide="clock" class="w-5 h-5" style="color: #717182;"></i>
+                <div class="bg-white rounded-lg p-4 sm:p-6" style="border: 1px solid var(--border);">
+                    <h3 class="mb-4 flex items-center gap-2" style="font-size: 16px; font-weight: 600; color: var(--text-primary);">
+                        <i data-lucide="clock" class="w-5 h-5" style="color: var(--text-secondary);"></i>
                         处理记录
                     </h3>
                     <div class="space-y-3" id="progress-records">
                         {% if progress_info and progress_info.records %}
                             {% for record in progress_info.records %}
                             <div class="flex items-start gap-3">
-                                <div class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style="background-color: #00B42A;"></div>
+                                <div class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style="background-color: var(--success);"></div>
                                 <div>
-                                    <p style="font-size: 13px; color: #030213; font-weight: 500;">{{ record.message }}</p>
-                                    <p style="font-size: 12px; color: #717182;">
+                                    <p style="font-size: 13px; color: var(--text-primary); font-weight: 500;">{{ record.message }}</p>
+                                    <p style="font-size: 12px; color: var(--text-secondary);">
                                         {% if record.created_at %}
                                             {% if record.created_at is string %}
                                                 {{ record.created_at }}
@@ -182,10 +195,10 @@
                             {% endfor %}
                         {% else %}
                             <div class="flex items-start gap-3">
-                                <div class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style="background-color: #165DFF;"></div>
+                                <div class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style="background-color: var(--primary-text);"></div>
                                 <div>
-                                    <p style="font-size: 13px; color: #030213; font-weight: 500;">等待处理</p>
-                                    <p style="font-size: 12px; color: #717182;">
+                                    <p style="font-size: 13px; color: var(--text-primary); font-weight: 500;">等待处理</p>
+                                    <p style="font-size: 12px; color: var(--text-secondary);">
                                         {% if ct_image.created_at %}
                                             {% if ct_image.created_at is string %}
                                                 {{ ct_image.created_at }}

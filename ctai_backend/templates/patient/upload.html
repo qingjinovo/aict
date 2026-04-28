@@ -3,13 +3,13 @@
 {% block title %}上传CT图像 - SAM-Med3D{% endblock %}
 
 {% block body %}
-<div class="min-h-screen" style="background-color: #F5F7FA;">
+<div class="min-h-screen" style="background-color: var(--bg-main);">
     <div class="page-header">
         <div class="container">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-responsive-lg font-semibold" style="color: #030213;">上传CT图像</h1>
-                    <p class="text-responsive-sm" style="color: #717182; margin-top: 2px;">请上传您的CT检查图像</p>
+                    <h1 class="text-xl font-semibold" style="color: var(--text-primary);">上传CT图像</h1>
+                    <p class="text-sm" style="color: var(--text-secondary); margin-top: 2px;">请上传您的CT检查图像</p>
                 </div>
                 <button onclick="window.history.back()" class="btn btn-secondary btn-sm">
                     <i data-lucide="arrow-left" class="w-4 h-4"></i>
@@ -22,12 +22,12 @@
     <div class="page-content">
         <div class="container container-sm">
             <div class="card">
-                <div class="p-3 sm:p-4 rounded-lg mb-4" style="background-color: #E8F3FF; border: 1px solid #165DFF;">
+                <div class="p-3 sm:p-4 rounded-lg mb-4" style="background-color: var(--primary); border: 1px solid var(--primary-text);">
                     <div class="flex items-start gap-2.5">
-                        <i data-lucide="info" class="w-4 h-4 flex-shrink-0 mt-0.5" style="color: #165DFF;"></i>
+                        <i data-lucide="info" class="w-4 h-4 flex-shrink-0 mt-0.5" style="color: var(--primary-text);"></i>
                         <div>
-                            <p class="text-responsive-sm font-medium mb-1" style="color: #030213;">上传须知</p>
-                            <p class="text-responsive-xs" style="color: #717182; line-height: 1.6;">
+                            <p class="text-sm font-medium mb-1" style="color: var(--text-primary);">上传须知</p>
+                            <p class="text-xs" style="color: var(--text-secondary); line-height: 1.6;">
                                 请上传您的CT检查图像文件。系统支持 <strong>NIfTI (.nii, .nii.gz)</strong>、DICOM、PNG、JPG 格式。
                                 上传后，医生将进行专业标注，AI模型将进行辅助分析。
                             </p>
@@ -37,35 +37,35 @@
 
                 <form id="upload-form" method="POST" enctype="multipart/form-data">
                     <div class="form-group">
-                        <label class="form-label">CT图像文件 <span style="color: #F53F3F;">*</span></label>
+                        <label class="form-label">CT图像文件 <span style="color: var(--error);">*</span></label>
                         <div id="drop-zone"
                              onclick="document.getElementById('ct_file').click();"
-                             style="border: 2px dashed #E5E7EB; border-radius: 12px; padding: 24px 16px; text-align: center; cursor: pointer; transition: all 0.2s; background-color: #FAFAFA;"
-                             onmouseenter="this.style.borderColor='#165DFF'; this.style.backgroundColor='#E8F3FF';"
-                             onmouseleave="this.style.borderColor='#E5E7EB'; this.style.backgroundColor='#FAFAFA';">
+                             style="border: 2px dashed var(--border); border-radius: var(--radius-xl); padding: var(--spacing-lg) var(--spacing-md); text-align: center; cursor: pointer; transition: all 0.2s; background-color: var(--bg-surface);"
+                             onmouseenter="this.style.borderColor='var(--primary-text)'; this.style.backgroundColor='var(--primary)';"
+                             onmouseleave="this.style.borderColor='var(--border)'; this.style.backgroundColor='var(--bg-surface)';">
                             <input type="file" id="ct_file" name="ct_file" style="display: none;" accept=".nii,.nii.gz,.dcm,.png,.jpg,.jpeg" onchange="handleFileSelect(this);" />
 
                             <div id="upload-placeholder">
-                                <i data-lucide="upload-cloud" class="w-10 h-10 sm:w-12 sm:h-12" style="color: #717182; margin-bottom: 12px;"></i>
-                                <p class="text-responsive-sm font-medium mb-1" style="color: #030213;">点击或拖拽文件到此处上传</p>
-                                <p class="text-responsive-xs" style="color: #717182;">支持 NIfTI、DICOM、PNG、JPG 格式，单文件不超过 100MB</p>
+                                <i data-lucide="upload-cloud" class="w-10 h-10 sm:w-12 sm:h-12" style="color: var(--text-secondary); margin-bottom: 12px;"></i>
+                                <p class="text-sm font-medium mb-1" style="color: var(--text-primary);">点击或拖拽文件到此处上传</p>
+                                <p class="text-xs" style="color: var(--text-secondary);">支持 NIfTI、DICOM、PNG、JPG 格式，单文件不超过 100MB</p>
                             </div>
 
                             <div id="file-preview" style="display: none;">
-                                <i data-lucide="file-check" class="w-10 h-10 sm:w-12 sm:h-12" style="color: #00B42A; margin-bottom: 12px;"></i>
-                                <p id="file-name" class="text-responsive-sm font-medium mb-1" style="color: #030213;"></p>
-                                <p id="file-size" class="text-responsive-xs" style="color: #717182;"></p>
-                                <p id="file-type" class="text-responsive-xs" style="color: #165DFF; margin-top: 4px;"></p>
+                                <i data-lucide="file-check" class="w-10 h-10 sm:w-12 sm:h-12" style="color: var(--success); margin-bottom: 12px;"></i>
+                                <p id="file-name" class="text-sm font-medium mb-1" style="color: var(--text-primary);"></p>
+                                <p id="file-size" class="text-xs" style="color: var(--text-secondary);"></p>
+                                <p id="file-type" class="text-xs" style="color: var(--primary-text); margin-top: 4px;"></p>
                                 <button type="button" onclick="event.stopPropagation(); clearFile();" class="btn btn-secondary btn-sm mt-3">清除文件</button>
                             </div>
                         </div>
                         <div id="file-error" class="mt-2" style="display: none;">
-                            <p class="text-responsive-xs" style="color: #F53F3F;"></p>
+                            <p class="text-xs" style="color: var(--error);"></p>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">检查部位 <span style="color: #F53F3F;">*</span></label>
+                        <label class="form-label">检查部位 <span style="color: var(--error);">*</span></label>
                         <select name="body_part" id="body_part" class="input" required onchange="updateUploadHint()">
                             <option value="">请选择检查部位</option>
                             <option value="头部">头部</option>
@@ -78,8 +78,8 @@
                         </select>
                     </div>
 
-                    <div id="upload-hint" class="p-3 rounded-lg mb-4" style="background-color: #F5F7FA; border: 1px solid #E5E7EB; display: none;">
-                        <p class="text-responsive-xs" style="color: #717182;">
+                    <div id="upload-hint" class="p-3 rounded-lg mb-4" style="background-color: var(--bg-main); border: 1px solid var(--border); display: none;">
+                        <p class="text-xs" style="color: var(--text-secondary);">
                             <i data-lucide="lightbulb" class="w-3 h-3 inline-block mr-1"></i>
                             <span id="hint-text"></span>
                         </p>
@@ -94,7 +94,7 @@
                         <div class="progress-bar mb-2">
                             <div id="progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
                         </div>
-                        <p id="progress-text" class="text-responsive-xs text-center" style="color: #717182;">上传中... 0%</p>
+                        <p id="progress-text" class="text-xs text-center" style="color: var(--text-secondary);">上传中... 0%</p>
                     </div>
 
                     <div id="upload-status" class="mb-4 p-4 rounded-lg" style="display: none;">
@@ -111,43 +111,43 @@
                     </div>
                 </form>
 
-                <div class="mt-6 pt-6" style="border-top: 1px solid #E5E7EB;">
-                    <h4 class="mb-3" style="font-size: 14px; color: #030213;">CT诊断流程说明</h4>
+                <div class="mt-6 pt-6" style="border-top: 1px solid var(--border);">
+                    <h4 class="mb-3" style="font-size: var(--font-size-base); color: var(--text-primary);">CT诊断流程说明</h4>
                     <div class="space-y-3">
                         <div class="flex items-start gap-3">
-                            <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: #E8F3FF;">
-                                <span style="font-size: 12px; color: #165DFF; font-weight: 600;">1</span>
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: var(--primary);">
+                                <span style="font-size: var(--font-size-xs); color: var(--primary-text); font-weight: 600;">1</span>
                             </div>
                             <div>
-                                <p style="font-size: 13px; color: #030213; margin-bottom: 2px;">上传CT图像</p>
-                                <p style="font-size: 12px; color: #717182;">上传 NIfTI 格式的 CT 检查图像</p>
+                                <p style="font-size: var(--font-size-sm); color: var(--text-primary); margin-bottom: 2px;">上传CT图像</p>
+                                <p style="font-size: var(--font-size-xs); color: var(--text-secondary);">上传 NIfTI 格式的 CT 检查图像</p>
                             </div>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: #FFF3E8;">
-                                <span style="font-size: 12px; color: #FF7D00; font-weight: 600;">2</span>
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: var(--warning-light);">
+                                <span style="font-size: var(--font-size-xs); color: var(--warning); font-weight: 600;">2</span>
                             </div>
                             <div>
-                                <p style="font-size: 13px; color: #030213; margin-bottom: 2px;">医生专业标注</p>
-                                <p style="font-size: 12px; color: #717182;">医生在系统中对 CT 图像进行专业标注</p>
+                                <p style="font-size: var(--font-size-sm); color: var(--text-primary); margin-bottom: 2px;">医生专业标注</p>
+                                <p style="font-size: var(--font-size-xs); color: var(--text-secondary);">医生在系统中对 CT 图像进行专业标注</p>
                             </div>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: #F5F7FA;">
-                                <span style="font-size: 12px; color: #717182; font-weight: 600;">3</span>
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: var(--bg-main);">
+                                <span style="font-size: var(--font-size-xs); color: var(--text-secondary); font-weight: 600;">3</span>
                             </div>
                             <div>
-                                <p style="font-size: 13px; color: #030213; margin-bottom: 2px;">AI 辅助分析</p>
-                                <p style="font-size: 12px; color: #717182;">提交标注结果至 AI 分析模块进行处理</p>
+                                <p style="font-size: var(--font-size-sm); color: var(--text-primary); margin-bottom: 2px;">AI 辅助分析</p>
+                                <p style="font-size: var(--font-size-xs); color: var(--text-secondary);">提交标注结果至 AI 分析模块进行处理</p>
                             </div>
                         </div>
                         <div class="flex items-start gap-3">
-                            <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: #F5F7FA;">
-                                <span style="font-size: 12px; color: #717182; font-weight: 600;">4</span>
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background-color: var(--bg-main);">
+                                <span style="font-size: var(--font-size-xs); color: var(--text-secondary); font-weight: 600;">4</span>
                             </div>
                             <div>
-                                <p style="font-size: 13px; color: #030213; margin-bottom: 2px;">生成诊断报告</p>
-                                <p style="font-size: 12px; color: #717182;">AI 处理后生成包含标注信息的 CT 文件及诊断报告</p>
+                                <p style="font-size: var(--font-size-sm); color: var(--text-primary); margin-bottom: 2px;">生成诊断报告</p>
+                                <p style="font-size: var(--font-size-xs); color: var(--text-secondary);">AI 处理后生成包含标注信息的 CT 文件及诊断报告</p>
                             </div>
                         </div>
                     </div>
@@ -314,20 +314,20 @@ const dropZone = document.getElementById('drop-zone');
 if (dropZone) {
     dropZone.addEventListener('dragover', function(e) {
         e.preventDefault();
-        this.style.borderColor = '#165DFF';
-        this.style.backgroundColor = '#E8F3FF';
+        this.style.borderColor = 'var(--primary-text)';
+        this.style.backgroundColor = 'var(--primary)';
     });
 
     dropZone.addEventListener('dragleave', function(e) {
         e.preventDefault();
-        this.style.borderColor = '#E5E7EB';
-        this.style.backgroundColor = '#FAFAFA';
+        this.style.borderColor = 'var(--border)';
+        this.style.backgroundColor = 'var(--bg-surface)';
     });
 
     dropZone.addEventListener('drop', function(e) {
         e.preventDefault();
-        this.style.borderColor = '#E5E7EB';
-        this.style.backgroundColor = '#FAFAFA';
+        this.style.borderColor = 'var(--border)';
+        this.style.backgroundColor = 'var(--bg-surface)';
 
         const file = e.dataTransfer.files[0];
         if (file) {

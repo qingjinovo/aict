@@ -1,15 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NiiVue Medical Image Viewer</title>
+    <title>NiiVue 医学影像</title>
     <script src="https://unpkg.com/@niivue/niivue@0.68.2/dist/niivue.umd.js"></script>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body { width: 100%; height: 100%; overflow: hidden; font-family: Roboto, sans-serif; }
-      #container { width: 100%; height: 100%; background: #000; position: relative; }
-      canvas { display: block; width: 100%; height: 100%; }
+
+      :root {
+        --primary-text: #165DFF;
+        --primary: #E8F3FF;
+        --primary-deep: #BAE0FF;
+        --bg-surface: #F8FAFE;
+        --bg-tool: rgba(248, 250, 254, 0.95);
+        --text-primary: #1A1A2E;
+        --text-secondary: #6B7280;
+        --text-muted: #86909C;
+        --border: #E5E7EB;
+        --radius-md: 6px;
+        --radius-lg: 8px;
+        --radius-xl: 12px;
+        --transition-fast: 150ms ease;
+        --shadow-ambient-elevated: 0 4px 16px rgba(0, 0, 0, 0.12);
+        --font-size-xs: 12px;
+        --font-size-sm: 13px;
+        --font-size-base: 14px;
+      }
+
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-size: var(--font-size-base);
+      }
+
+      #container {
+        width: 100%;
+        height: 100%;
+        background: #0A0A14;
+        position: relative;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
       .top-bar {
         position: absolute;
         top: 0;
@@ -17,195 +56,269 @@
         right: 0;
         z-index: 100;
         display: flex;
-        align-items: flex-start;
-        gap: 8px;
-        padding: 10px;
-        background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%);
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        background: linear-gradient(to bottom, rgba(10, 10, 20, 0.7) 0%, rgba(10, 10, 20, 0) 100%);
       }
+
       .dropdown {
         position: relative;
       }
+
       .dropdown-btn {
-        background: white;
-        color: #333;
-        border: 1px solid #ddd;
-        padding: 8px 14px;
-        border-radius: 6px;
+        background: var(--bg-tool);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        color: var(--text-primary);
+        border: 1px solid rgba(229, 231, 235, 0.3);
+        padding: 6px 12px;
+        border-radius: var(--radius-md);
         cursor: pointer;
-        font-size: 13px;
+        font-size: var(--font-size-sm);
         font-weight: 500;
         display: flex;
         align-items: center;
-        gap: 8px;
-        min-width: 90px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        gap: 6px;
+        min-width: 84px;
+        box-shadow: var(--shadow-ambient-elevated);
+        transition: background var(--transition-fast), border-color var(--transition-fast);
       }
+
       .dropdown-btn:hover {
-        background: #f5f5f5;
-        border-color: #ccc;
+        background: rgba(232, 243, 255, 0.95);
+        border-color: rgba(22, 93, 255, 0.3);
       }
+
       .dropdown-btn.active {
-        background: #e8f0fe;
-        border-color: #165DFF;
-        color: #165DFF;
+        background: var(--primary);
+        border-color: var(--primary-text);
+        color: var(--primary-text);
       }
+
       .dropdown-btn::after {
-        content: '▼';
-        font-size: 9px;
-        color: #999;
+        content: '';
+        width: 0;
+        height: 0;
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-top: 4px solid var(--text-secondary);
         margin-left: auto;
+        transition: transform var(--transition-fast);
       }
+
       .dropdown-btn.active::after {
-        color: #165DFF;
+        border-top-color: var(--primary-text);
+        transform: rotate(180deg);
       }
+
       .dropdown-menu {
         display: none;
         position: absolute;
-        top: calc(100% + 4px);
+        top: calc(100% + 6px);
         left: 0;
-        background: white;
-        border-radius: 8px;
+        background: var(--bg-tool);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: var(--radius-xl);
         padding: 8px;
         min-width: 160px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        border: 1px solid #e0e0e0;
+        box-shadow: var(--shadow-ambient-elevated);
+        border: 1px solid rgba(229, 231, 235, 0.3);
       }
+
       .dropdown-menu.show { display: block; }
+
       .dropdown-menu button {
         width: 100%;
-        background: white;
-        color: #333;
+        background: transparent;
+        color: var(--text-primary);
         border: none;
-        padding: 10px 14px;
-        border-radius: 6px;
+        padding: 8px 12px;
+        border-radius: var(--radius-md);
         cursor: pointer;
-        font-size: 13px;
+        font-size: var(--font-size-sm);
+        font-family: inherit;
         text-align: left;
         display: flex;
         align-items: center;
         gap: 10px;
+        transition: background var(--transition-fast);
       }
-      .dropdown-menu button:hover { background: #f5f5f5; }
+
+      .dropdown-menu button:hover { background: var(--primary); }
+
       .dropdown-menu button.selected {
-        background: #e8f0fe;
-        color: #165DFF;
+        background: var(--primary);
+        color: var(--primary-text);
         font-weight: 500;
       }
+
       .pen-type-menu {
         display: none;
         position: absolute;
-        top: calc(100% + 4px);
+        top: calc(100% + 6px);
         left: 0;
-        background: white;
-        border-radius: 8px;
+        background: var(--bg-tool);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: var(--radius-xl);
         padding: 8px;
         min-width: 140px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        border: 1px solid #e0e0e0;
+        box-shadow: var(--shadow-ambient-elevated);
+        border: 1px solid rgba(229, 231, 235, 0.3);
       }
+
       .pen-type-menu.show { display: block; }
+
       .pen-type-menu button {
         width: 100%;
-        background: white;
-        color: #333;
+        background: transparent;
+        color: var(--text-primary);
         border: none;
-        padding: 10px 14px;
-        border-radius: 6px;
+        padding: 8px 12px;
+        border-radius: var(--radius-md);
         cursor: pointer;
-        font-size: 13px;
+        font-size: var(--font-size-sm);
+        font-family: inherit;
         text-align: left;
         display: flex;
         align-items: center;
         gap: 10px;
+        transition: background var(--transition-fast);
       }
-      .pen-type-menu button:hover { background: #f5f5f5; }
+
+      .pen-type-menu button:hover { background: var(--primary); }
+
       .pen-type-menu button.selected {
-        background: #e8f0fe;
-        color: #165DFF;
+        background: var(--primary);
+        color: var(--primary-text);
         font-weight: 500;
       }
+
       .color-menu {
         display: none;
         position: absolute;
-        top: calc(100% + 4px);
+        top: calc(100% + 6px);
         left: 0;
-        background: white;
-        border-radius: 8px;
-        padding: 10px;
-        min-width: 180px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        border: 1px solid #e0e0e0;
+        background: var(--bg-tool);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: var(--radius-xl);
+        padding: 12px;
+        min-width: 200px;
+        box-shadow: var(--shadow-ambient-elevated);
+        border: 1px solid rgba(229, 231, 235, 0.3);
       }
+
       .color-menu.show { display: block; }
+
       .color-grid {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
         gap: 8px;
+        justify-items: center;
       }
+
       .color-swatch {
         width: 28px;
         height: 28px;
-        border-radius: 6px;
+        border-radius: var(--radius-md);
         border: 2px solid transparent;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: transform var(--transition-fast), box-shadow var(--transition-fast);
       }
+
       .color-swatch:hover {
-        transform: scale(1.1);
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        transform: scale(1.15);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
       }
+
       .color-swatch.selected {
-        border-color: #165DFF;
-        box-shadow: 0 0 0 2px rgba(22,93,255,0.3);
+        border-color: var(--primary-text);
+        box-shadow: 0 0 0 2px rgba(22, 93, 255, 0.4);
       }
-      .save-btn {
-        background: #00B42A !important;
-        color: white !important;
-        border: none !important;
-        margin-left: auto;
-      }
-      .save-btn:hover {
-        background: #009a26 !important;
-      }
+
       .dropdown-divider {
         height: 1px;
-        background: #eee;
-        margin: 8px 0;
+        background: var(--border);
+        margin: 10px 0;
       }
+
       .brush-control {
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 4px 0;
       }
+
       .brush-control label {
-        color: #666;
+        color: var(--text-secondary);
         font-size: 12px;
-        min-width: auto;
-        margin: 0;
-        padding: 0;
       }
+
       .brush-control input[type="range"] {
         flex: 1;
         height: 4px;
         cursor: pointer;
+        accent-color: var(--primary-text);
       }
+
       .brush-control span {
-        color: #333;
+        color: var(--text-primary);
         font-size: 12px;
         min-width: 20px;
         text-align: right;
+        font-weight: 500;
       }
+
+      .brush-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .brush-actions button {
+        flex: 1;
+        color: var(--bg-surface);
+        border: none;
+        padding: 8px;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+        font-family: inherit;
+        transition: opacity var(--transition-fast);
+      }
+
+      .brush-actions button:hover { opacity: 0.85; }
+
+      .btn-undo { background: #FF9800; }
+      .btn-clear { background: #F53F3F; }
+
+      .save-btn {
+        background: var(--primary-deep);
+        color: var(--primary-text);
+        border: 1px solid var(--primary-text);
+        margin-left: auto;
+      }
+
+      .save-btn:hover {
+        background: var(--primary-text);
+        color: var(--bg-surface);
+      }
+
       .info {
         position: absolute;
-        bottom: 10px;
-        left: 10px;
+        bottom: 12px;
+        left: 12px;
         z-index: 100;
-        background: rgba(0,0,0,0.7);
-        color: white;
-        padding: 8px 12px;
-        border-radius: 4px;
-        font-size: 12px;
+        background: rgba(10, 10, 20, 0.8);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        color: rgba(255, 255, 255, 0.8);
+        padding: 6px 10px;
+        border-radius: var(--radius-md);
+        font-size: var(--font-size-xs);
+        font-family: inherit;
       }
     </style>
   </head>
@@ -217,27 +330,45 @@
       <div class="dropdown">
         <button class="dropdown-btn" id="view-btn" onclick="toggleViewMenu()">显示模式</button>
         <div class="dropdown-menu" id="view-menu">
-          <button onclick="setSliceType('axial')" id="btn-axial">横断面</button>
-          <button onclick="setSliceType('coronal')" id="btn-coronal">冠状面</button>
-          <button onclick="setSliceType('sagittal')" id="btn-sagittal">矢状面</button>
-          <button onclick="setSliceType('multi')" id="btn-multi">多平面</button>
-          <button onclick="setSliceType('3d')" id="btn-3d">3D视图</button>
+          <button onclick="setSliceType('axial')" id="btn-axial">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+            横断面
+          </button>
+          <button onclick="setSliceType('coronal')" id="btn-coronal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+            冠状面
+          </button>
+          <button onclick="setSliceType('sagittal')" id="btn-sagittal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+            矢状面
+          </button>
+          <button onclick="setSliceType('multi')" id="btn-multi">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            多平面
+          </button>
+          <button onclick="setSliceType('3d')" id="btn-3d">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            3D 视图
+          </button>
         </div>
       </div>
       <div class="dropdown">
-        <button class="dropdown-btn" id="pen-type-btn" onclick="togglePenTypeMenu()">线条</button>
+        <button class="dropdown-btn" id="pen-type-btn" onclick="togglePenTypeMenu()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+          画笔
+        </button>
         <div class="pen-type-menu" id="pen-type-menu">
           <button onclick="selectPenType('stroke')" id="pen-type-stroke">
-            <span style="width:20px;text-align:center;">—</span> 线条
+            <span style="width:16px;height:2px;background:currentColor;border-radius:1px;"></span> 线条
           </button>
           <button onclick="selectPenType('fill')" id="pen-type-fill">
-            <span style="width:20px;text-align:center;">■</span> 填充
+            <span style="width:16px;height:16px;background:currentColor;border-radius:2px;"></span> 填充
           </button>
         </div>
       </div>
       <div class="dropdown">
         <button class="dropdown-btn" id="color-btn" onclick="toggleColorMenu()">
-          <span id="color-indicator" style="width:18px;height:18px;background:#FF5252;border-radius:3px;display:inline-block;"></span>
+          <span id="color-indicator" style="width:14px;height:14px;background:#FF5252;border-radius:3px;display:inline-block;"></span>
           <span id="color-name">红色</span>
         </button>
         <div class="color-menu" id="color-menu">
@@ -246,7 +377,7 @@
             <div class="color-swatch" style="background:#FFD740;" onclick="selectColor('#FFD740', '黄色', this)"></div>
             <div class="color-swatch" style="background:#64FFDA;" onclick="selectColor('#64FFDA', '青色', this)"></div>
             <div class="color-swatch" style="background:#B388FF;" onclick="selectColor('#B388FF', '紫色', this)"></div>
-            <div class="color-swatch" style="background:#FFFFFF;border:1px solid #ddd;" onclick="selectColor('#FFFFFF', '白色', this)"></div>
+            <div class="color-swatch" style="background:#FFFFFF;border:1px solid var(--border);" onclick="selectColor('#FFFFFF', '白色', this)"></div>
             <div class="color-swatch" style="background:#4CAF50;" onclick="selectColor('#4CAF50', '绿色', this)"></div>
             <div class="color-swatch" style="background:#FF9800;" onclick="selectColor('#FF9800', '橙色', this)"></div>
             <div class="color-swatch" style="background:#E91E63;" onclick="selectColor('#E91E63', '粉色', this)"></div>
@@ -255,18 +386,21 @@
           </div>
           <div class="dropdown-divider"></div>
           <div class="brush-control">
-            <label>笔刷:</label>
+            <label>笔刷</label>
             <input type="range" id="brush-size" min="1" max="20" value="5" onchange="setBrushSize(this.value)">
             <span id="brush-size-val">5</span>
           </div>
           <div class="dropdown-divider"></div>
-          <div style="display:flex;gap:8px;">
-            <button onclick="undoDrawing()" style="flex:1;background:#FF9800 !important;color:white;border:none;padding:8px;border-radius:6px;cursor:pointer;">撤销</button>
-            <button onclick="clearDrawing()" style="flex:1;background:#F44336 !important;color:white;border:none;padding:8px;border-radius:6px;cursor:pointer;">清除</button>
+          <div class="brush-actions">
+            <button class="btn-undo" onclick="undoDrawing()">撤销</button>
+            <button class="btn-clear" onclick="clearDrawing()">清除</button>
           </div>
         </div>
       </div>
-      <button class="dropdown-btn save-btn" onclick="saveDrawing()">保存标注</button>
+      <button class="dropdown-btn save-btn" onclick="saveDrawing()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
+        保存标注
+      </button>
     </div>
     <div class="info" id="info">等待加载...</div>
 
@@ -386,7 +520,6 @@
 
       function selectPenType(type) {
         currentPenType = type;
-        document.getElementById('pen-type-btn').innerHTML = type === 'stroke' ? '线条' : '填充';
         document.getElementById('pen-type-' + type).classList.add('selected');
         document.getElementById('pen-type-' + (type === 'stroke' ? 'fill' : 'stroke')).classList.remove('selected');
         updatePenValue();
@@ -469,7 +602,6 @@
 
           HTMLAnchorElement.prototype.click = function() {
             console.log('saveDrawing: intercepted download click, preventing');
-            // Don't call original - prevents download
           };
 
           try {

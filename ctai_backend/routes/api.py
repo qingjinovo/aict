@@ -1,4 +1,6 @@
 import os
+import json
+import logging
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from models.user import User
@@ -207,6 +209,7 @@ def save_annotation(image_id):
 
     annotation_filename = request.form.get('annotation_filename')
     drawing_data = request.form.get('drawing_data')
+    dims_str = request.form.get('dims')
     saved_at = request.form.get('saved_at')
 
     if not annotation_filename:
@@ -217,6 +220,105 @@ def save_annotation(image_id):
     os.makedirs(annotation_dir, exist_ok=True)
 
     annotation_file_path = os.path.join(annotation_dir, annotation_filename)
+
+    logging.info(f"save_annotation called with drawing_data type: {type(drawing_data)}, length: {len(drawing_data) if drawing_data else 0}")
+    logging.info(f"dims_str received: {dims_str}, type: {type(dims_str)}, is None: {dims_str is None}, is empty: {dims_str == '' if dims_str else True}")
+
+    dims = None
+    if dims_str:
+        try:
+            raw_dims = json.loads(dims_str)
+            if raw_dims and len(raw_dims) >= 3:
+                if len(raw_dims) == 3:
+                    dims = raw_dims
+                else:
+                    dims = [raw_dims[-1], raw_dims[-2], raw_dims[-3]]
+                logging.info(f"dims parsed successfully: {dims} (from raw: {raw_dims})")
+            else:
+                logging.warning(f"Invalid dims format: {raw_dims}")
+        except json.JSONDecodeError as e:
+            logging.warning(f"Invalid JSON in dims: {e}")
+            dims = None
+    else:
+        logging.warning("dims_str is None or empty, dims will not be available")
+
+    save_success = False
+    try:
+        import numpy as np
+        import SimpleITK as sitk
+
+        annotation_file = request.files.get('annotation_file')
+        if annotation_file and annotation_file.filename:
+            logging.info(f"Received annotation file upload: {annotation_file.filename}")
+            annotation_file.save(annotation_file_path)
+            logging.info(f"Annotation file saved directly: {annotation_file_path}")
+            save_success = True
+        elif drawing_data:
+            logging.info(f"drawing_data received, first 100 chars: {str(drawing_data)[:100]}")
+
+            try:
+                mask_data = json.loads(drawing_data)
+            except json.JSONDecodeError as e:
+                logging.warning(f"Invalid JSON in drawing_data: {e}")
+                mask_data = None
+
+            logging.info(f"mask_data type after parse: {type(mask_data)}, is list: {isinstance(mask_data, list)}, is None: {mask_data is None}")
+
+            if mask_data and isinstance(mask_data, (list, tuple)):
+                mask_array = np.array(mask_data, dtype=np.uint8)
+                logging.info(f"mask_array shape before reshape: {mask_array.shape}, size: {mask_array.size}")
+
+                if dims and len(dims) == 3:
+                    expected_size = dims[0] * dims[1] * dims[2]
+                    logging.info(f"Attempting to reshape to dims: {dims}, expected size: {expected_size}")
+                    if mask_array.size == expected_size:
+                        mask_array = mask_array.reshape(dims)
+                        logging.info(f"mask_array reshaped successfully to: {mask_array.shape}")
+                    else:
+                        logging.warning(f"mask_array size {mask_array.size} does not match expected {expected_size} from dims {dims}")
+                        mask_data = None
+                else:
+                    logging.warning(f"dims not available or invalid: {dims}, cannot reshape mask_array")
+                    mask_data = None
+            else:
+                logging.warning(f"drawing_data is not a valid array: {type(mask_data)}")
+                mask_data = None
+
+            logging.info(f"Before save check: mask_data is None: {mask_data is None}, ct_image.file_path exists: {ct_image.file_path and os.path.exists(ct_image.file_path)}")
+
+            if mask_data is not None and ct_image.file_path and os.path.exists(ct_image.file_path):
+                ref_image = sitk.ReadImage(ct_image.file_path)
+                ref_array = sitk.GetArrayFromImage(ref_image)
+                logging.info(f"Reference image shape: {ref_array.shape}")
+
+                if mask_array.shape != ref_array.shape:
+                    logging.warning(f"mask_array shape {mask_array.shape} does not match reference image shape {ref_array.shape}")
+                    if dims and len(dims) == 3 and dims == tuple(ref_array.shape):
+                        logging.info("Shapes match via dims, proceeding")
+                    else:
+                        logging.error("Cannot save annotation: shape mismatch and dims don't resolve it")
+                        mask_data = None
+
+                if mask_data is not None:
+                    mask_image = sitk.GetImageFromArray(mask_array)
+                    mask_image.CopyInformation(ref_image)
+                    sitk.WriteImage(mask_image, annotation_file_path)
+                    logging.info(f"Annotation NIfTI file saved successfully: {annotation_file_path}")
+                    save_success = True
+            elif mask_data is not None:
+                logging.info(f"Saving annotation without reference image (no ct_image.file_path)")
+                mask_image = sitk.GetImageFromArray(mask_array)
+                sitk.WriteImage(mask_image, annotation_file_path)
+                logging.info(f"Annotation NIfTI file saved (no reference): {annotation_file_path}")
+                save_success = True
+            else:
+                logging.warning(f"Could not save annotation NIfTI file, mask_data was set to None")
+        else:
+            logging.warning(f"No annotation file or drawing_data received, skipping NIfTI file save")
+    except Exception as e:
+        logging.warning(f"Failed to save annotation NIfTI file: {e}")
+        import traceback
+        logging.warning(traceback.format_exc())
 
     ct_image.annotation_file_path = annotation_file_path
     ct_image.status = 'doctor_annotating'

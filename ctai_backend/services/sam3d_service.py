@@ -423,7 +423,7 @@ class SAM3DInferenceService:
 
         logger.info("_data_preprocess: Cropping/padding...")
         crop_transform = tio.CropOrPad(mask_name='label', target_shape=(crop_size, crop_size, crop_size))
-        norm_transform = tio.ZNormalization(masking_method=lambda x: x > 0)
+        norm_transform = tio.ZNormalization()
 
         roi_image, roi_label, meta_info = self._get_roi(
             subject_canonical, meta_info, crop_transform, norm_transform
@@ -460,7 +460,7 @@ class SAM3DInferenceService:
         final_pred_numpy_dhw = pred_resampled_to_original_space.data.squeeze(0).cpu().numpy()
         final_pred_numpy = final_pred_numpy_dhw.astype(np.uint8)
 
-        return final_pred_numpy.transpose(2, 1, 0)
+        return final_pred_numpy
 
     def _save_nifti(self, in_arr: np.ndarray, out_path: str, meta_info_for_saving: dict):
         """保存 NIfTI 文件"""
@@ -586,14 +586,16 @@ class SAM3DInferenceService:
                     subject.label = tio.LabelMap(gt_path)
                     gt_sitk_image = sitk.ReadImage(gt_path)
                     _, meta_for_gt = self._read_nifti(gt_path, get_meta_info=True)
+                    gt_sitk_shape = sitk.GetArrayFromImage(gt_sitk_image).shape
+                    gt_spatial_shape = (gt_sitk_shape[2], gt_sitk_shape[1], gt_sitk_shape[0])
                     meta_info.update({
                         "original_subject_affine": gt_sitk_image.GetOrigin(),
-                        "original_subject_spatial_shape": sitk.GetArrayFromImage(gt_sitk_image).shape,
+                        "original_subject_spatial_shape": gt_spatial_shape,
                     })
                 except Exception as e:
                     print(f'[SAM3D] Step 6 failed: {e}')
                     raise
-                log(f"GT spatial shape: {sitk.GetArrayFromImage(gt_sitk_image).shape}")
+                log(f"GT spatial shape: {gt_spatial_shape}")
             else:
                 meta_info.update({
                     "original_subject_affine": meta_info["sitk_image_object"].GetOrigin(),
@@ -640,6 +642,9 @@ class SAM3DInferenceService:
                     print(f'[SAM3D] Step 7.{idx+1}.3 _data_postprocess failed: {e}')
                     raise
                 log(f"  Postprocessed shape: {cls_pred_original_grid.shape}")
+                if cls_pred_original_grid.shape != final_pred_numpy_original_grid.shape:
+                    log(f"  Transposing postprocessed from {cls_pred_original_grid.shape} to {final_pred_numpy_original_grid.shape}")
+                    cls_pred_original_grid = np.transpose(cls_pred_original_grid, (2, 1, 0))
                 final_pred_numpy_original_grid[cls_pred_original_grid == 1] = category_index
 
             log(f"Step 8: Saving to {output_path}")

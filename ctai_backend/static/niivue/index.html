@@ -448,12 +448,55 @@
           return;
         }
         try {
-          const filename = 'annotation_' + (ctImageId || Date.now()) + '.nii';
-          const drawingData = nv.getDrawingData ? nv.getDrawingData() : null;
+          const filename = 'annotation_' + (ctImageId || Date.now()) + '.nii.gz';
+          console.log('saveDrawing: starting, will intercept download');
+
+          const rawDims = nv.volumes && nv.volumes[0] ? Array.from(nv.volumes[0].dims) : null;
+          console.log('saveDrawing: raw dims =', rawDims);
+
+          const dims = rawDims && rawDims.length >= 3 ? [rawDims[2], rawDims[1], rawDims[0]] : rawDims;
+          console.log('saveDrawing: converted dims (z, y, x) =', dims);
+
+          let capturedBlob = null;
+          const originalCreateObjectURL = window.URL.createObjectURL;
+          const originalAnchorClick = HTMLAnchorElement.prototype.click;
+
+          window.URL.createObjectURL = function(blob) {
+            console.log('saveDrawing: intercepted createObjectURL, type:', blob.type, 'size:', blob.size);
+            capturedBlob = blob;
+            return originalCreateObjectURL.call(window.URL, blob);
+          };
+
+          HTMLAnchorElement.prototype.click = function() {
+            console.log('saveDrawing: intercepted download click, preventing');
+            // Don't call original - prevents download
+          };
+
+          try {
+            await nv.saveImage({
+              filename: filename,
+              isSaveDrawing: true
+            });
+            console.log('saveDrawing: saveImage completed');
+          } finally {
+            window.URL.createObjectURL = originalCreateObjectURL;
+            HTMLAnchorElement.prototype.click = originalAnchorClick;
+          }
+
+          if (!capturedBlob) {
+            throw new Error('Failed to capture drawing data');
+          }
+
+          console.log('saveDrawing: captured blob, sending to parent');
+
+          const arrayBuffer = await capturedBlob.arrayBuffer();
+          const drawingData = Array.from(new Uint8Array(arrayBuffer));
+
           notifyParent('niivue-saved', {
             filename: filename,
             success: true,
             drawingData: drawingData,
+            dims: dims,
             penType: currentPenType,
             color: currentColor,
             penValue: currentPenValue

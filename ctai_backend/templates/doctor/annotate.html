@@ -278,47 +278,21 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     window.addEventListener('message', function(event) {
+        console.log('Received message from niivue:', event.data);
         if (event.data && event.data.type === 'niivue-ready') {
             console.log('Niivue is ready', event.data);
         } else if (event.data && event.data.type === 'niivue-saved') {
-            console.log('Annotation saved:', event.data.detail.filename);
-            saveAnnotationToServer(event.data.detail.filename, event.data.detail.drawingData);
+            console.log('Annotation saved event received');
+            console.log('  filename:', event.data.detail.filename);
+            console.log('  drawingData length:', event.data.detail.drawingData ? event.data.detail.drawingData.length : 'null');
+            console.log('  dims:', event.data.detail.dims);
+            saveAnnotationToServer(event.data.detail.filename, event.data.detail.drawingData, event.data.detail.dims);
         } else if (event.data && event.data.type === 'niivue-error') {
             console.error('Niivue error:', event.data.detail.error);
             loadingOverlay.innerHTML = '<div class="text-center" style="color: #F53F3F;"><p>图像加载失败: ' + event.data.detail.error + '</p></div>';
         }
     });
 });
-
-async function saveAnnotationToServer(filename, drawingData) {
-    try {
-        const formData = new FormData();
-        formData.append('annotation_filename', filename);
-        formData.append('saved_at', new Date().toISOString());
-        if (drawingData) {
-            formData.append('drawing_data', JSON.stringify(drawingData));
-        }
-
-        const token = window.authManager?.getToken() || '';
-        const response = await fetch('/api/ct-images/' + CT_IMAGE_ID + '/annotation', {
-            method: 'POST',
-            headers: {
-                'Authorization': 'Bearer ' + token
-            },
-            body: formData
-        });
-        const result = await response.json();
-        if (result.success) {
-            showSaveSuccess('标注已保存到服务器');
-            console.log('Annotation saved to server:', result);
-        } else {
-            showSaveError(result.error || '保存失败');
-        }
-    } catch (error) {
-        console.error('Failed to save annotation reference:', error);
-        showSaveError('网络错误，请重试');
-    }
-}
 
 function showSaveSuccess(message) {
     const status = document.getElementById('submit-status');
@@ -371,13 +345,27 @@ async function submitToAI() {
     triggerNiivueSave();
 }
 
-async function saveAnnotationToServer(filename, drawingData) {
+async function saveAnnotationToServer(filename, drawingData, dims) {
     try {
+        console.log('saveAnnotationToServer: filename =', filename);
+        console.log('saveAnnotationToServer: drawingData length =', drawingData ? drawingData.length : 'null');
+        console.log('saveAnnotationToServer: dims =', dims);
+
         const formData = new FormData();
         formData.append('annotation_filename', filename);
         formData.append('saved_at', new Date().toISOString());
-        if (drawingData) {
-            formData.append('drawing_data', JSON.stringify(drawingData));
+
+        if (dims) {
+            formData.append('dims', JSON.stringify(dims));
+            console.log('Sending dims to server:', dims);
+        }
+
+        if (drawingData && drawingData.length > 0) {
+            const blob = new Blob([new Uint8Array(drawingData)], { type: 'application/gzip' });
+            formData.append('annotation_file', blob, filename);
+            console.log('Sending annotation file to server, size:', blob.size);
+        } else {
+            console.warn('No drawing data to send');
         }
 
         const token = window.authManager?.getToken() || '';

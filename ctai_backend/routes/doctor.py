@@ -19,7 +19,7 @@ def dashboard():
 
     pending_reports = CTImage.query.filter(
         CTImage.doctor_id == current_user.id,
-        CTImage.status.in_(['uploaded', 'notifying', 'doctor_reviewing', 'ai_processing', 'ai_completed', 'doctor_annotating', 'pending_confirmation'])
+        CTImage.status.in_(['uploaded', 'notifying', 'doctor_reviewing', 'ai_processing', 'ai_completed', 'doctor_annotating', 'ai_annotated', 'pending_confirmation'])
     ).order_by(CTImage.created_at.desc()).all()
 
     completed_reports = CTImage.query.filter_by(

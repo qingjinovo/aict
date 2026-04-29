@@ -19,8 +19,12 @@ def dashboard():
     reports = CTImage.query.filter_by(patient_id=current_user.id).order_by(CTImage.created_at.desc()).all()
     unread_notifications = NotificationService.get_user_notifications(current_user.id, unread_only=True)
 
+    latest_report = reports[0] if reports else None
+    history_reports = reports[1:] if len(reports) > 1 else []
+
     return render_template('patient/dashboard.html',
-                         reports=reports,
+                         latest_report=latest_report,
+                         history_reports=history_reports,
                          unread_notifications=unread_notifications)
 
 @patient_bp.route('/patient/upload', methods=['GET', 'POST'])

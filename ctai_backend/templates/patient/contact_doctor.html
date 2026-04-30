@@ -21,6 +21,16 @@
 
     <div class="page-content">
         <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} mb-4">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
             <div class="grid gap-4 sm:gap-6" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); max-width: 900px; margin: 0 auto;">
                 <div class="card">
                     <div class="text-center" style="padding: clamp(16px, 4vw, 24px);">
@@ -56,29 +66,46 @@
                 </div>
             </div>
 
+            {% if reports %}
             <div class="card mt-6" style="max-width: 900px; margin: clamp(16px, 4vw, 24px) auto 0;">
-                <h3 class="card-title mb-4">在线留言</h3>
-                <form>
-                    <div class="grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));">
-                        <div class="form-group">
-                            <label class="form-label">您的姓名</label>
-                            <input type="text" class="input" placeholder="请输入姓名" />
+                <h3 class="card-title mb-4">选择报告联系医生</h3>
+                <p class="text-responsive-sm mb-4" style="color: var(--text-secondary);">
+                    请选择您要咨询的报告，系统将为您连接对应的医生
+                </p>
+                <div class="space-y-3">
+                    {% for report in reports %}
+                    <div class="flex items-center justify-between p-3 rounded-lg" style="background-color: var(--bg-main); border: 1px solid var(--border);">
+                        <div>
+                            <p style="font-weight: 500; color: var(--text-primary);">
+                                {{ report.original_filename or 'CT影像' }}
+                            </p>
+                            <p class="text-responsive-sm" style="color: var(--text-secondary);">
+                                上传时间：{{ report.created_at.strftime('%Y-%m-%d %H:%M') if report.created_at else '' }}
+                            </p>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">联系电话</label>
-                            <input type="tel" class="input" placeholder="请输入联系电话" />
-                        </div>
+                        <a href="{{ url_for('patient.message', report_id=report.id) }}" class="btn btn-primary btn-sm">
+                            <i data-lucide="message-circle" class="w-4 h-4"></i>
+                            联系医生
+                        </a>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">留言内容</label>
-                        <textarea class="input" rows="4" placeholder="请输入留言内容..."></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary">
-                        <i data-lucide="send" class="w-4 h-4"></i>
-                        提交留言
-                    </button>
-                </form>
+                    {% endfor %}
+                </div>
             </div>
+            {% else %}
+            <div class="card mt-6" style="max-width: 900px; margin: clamp(16px, 4vw, 24px) auto 0;">
+                <div class="text-center" style="padding: clamp(24px, 4vw, 40px);">
+                    <i data-lucide="file-text" class="w-12 h-12 mx-auto mb-4" style="color: var(--text-secondary);"></i>
+                    <h3 class="text-responsive-base mb-2" style="font-weight: 600; color: var(--text-primary);">暂无报告</h3>
+                    <p class="text-responsive-sm mb-4" style="color: var(--text-secondary);">
+                        请先上传CT影像报告，然后选择报告联系医生
+                    </p>
+                    <a href="{{ url_for('patient.upload') }}" class="btn btn-primary">
+                        <i data-lucide="upload" class="w-4 h-4"></i>
+                        上传CT影像
+                    </a>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

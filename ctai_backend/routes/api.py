@@ -482,6 +482,32 @@ def run_ai_annotation(image_id):
             'error': str(e)
         }), 500
 
+@api_bp.route('/ct-images/<int:image_id>/ai-annotate/timeout', methods=['POST'])
+@require_auth
+def handle_ai_timeout(image_id):
+    """处理AI标注超时"""
+    import logging
+    logger = logging.getLogger(__name__)
+
+    ct_image = CTImage.query.get_or_404(image_id)
+
+    if ct_image.status == 'ai_processing':
+        ct_image.status = 'doctor_annotating'
+        db.session.commit()
+
+        ProgressService.create_progress_record(
+            ct_image_id=image_id,
+            stage='ai_annotation_timeout',
+            message='AI标注超时，已恢复为待标注状态'
+        )
+
+        logger.warning(f"AI annotation timeout for ct_image {image_id}, status reset to doctor_annotating")
+
+    return jsonify({
+        'success': True,
+        'message': '超时状态已处理'
+    })
+
 @api_bp.route('/ct-images/<int:image_id>/ai-annotate/status', methods=['GET'])
 @login_required
 def get_ai_annotation_status(image_id):

@@ -344,6 +344,9 @@ async function saveAnnotationToServer(filename, drawingData, dims) {
     }
 }
 
+let aiAbortController = null;
+const AI_TIMEOUT_MS = 90000;
+
 async function submitToAIAnnotation() {
     const btn = document.getElementById('confirm-report-btn');
     btn.disabled = true;
@@ -351,6 +354,13 @@ async function submitToAIAnnotation() {
     lucide.createIcons();
 
     showStatus('AI正在分割图像，请稍候...', 'info');
+
+    aiAbortController = new AbortController();
+    const timeoutId = setTimeout(() => {
+        aiAbortController.abort();
+    }, AI_TIMEOUT_MS);
+
+    const startTime = Date.now();
 
     try {
         const token = window.authManager?.getToken() || '';
@@ -361,15 +371,15 @@ async function submitToAIAnnotation() {
             headers: {
                 'Authorization': 'Bearer ' + token,
                 'Content-Type': 'application/json'
-            }
+            },
+            signal: aiAbortController.signal
         });
 
-        console.log('AI annotation response status:', response.status);
-        console.log('AI annotation response headers:', response.headers.get('content-type'));
+        clearTimeout(timeoutId);
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`AI annotation completed in ${elapsed}s`);
 
         const text = await response.text();
-        console.log('AI annotation response text:', text.substring(0, 200));
-
         let result;
         try {
             result = JSON.parse(text);
@@ -387,9 +397,29 @@ async function submitToAIAnnotation() {
             resetButton();
         }
     } catch (error) {
+        clearTimeout(timeoutId);
         console.error('AI annotation error:', error);
-        showSaveError('AI标注失败: ' + error.message);
+
+        if (error.name === 'AbortError') {
+            try {
+                const token = window.authManager?.getToken() || '';
+                fetch('/api/ct-images/' + CT_IMAGE_ID + '/ai-annotate/timeout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+            } catch (e) {
+                console.error('Failed to notify timeout:', e);
+            }
+            showSaveError('AI标注超时（已超过90秒），请稍后重试');
+        } else {
+            showSaveError('AI标注失败: ' + error.message);
+        }
         resetButton();
+    } finally {
+        aiAbortController = null;
     }
 }
 

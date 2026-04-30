@@ -167,6 +167,12 @@ def message(report_id):
         flash('您无权查看此报告', 'error')
         return redirect(url_for('patient.dashboard'))
 
+    if not ct_image.doctor_id:
+        default_doctor = User.query.filter_by(role='doctor', is_active=True).first()
+        if default_doctor:
+            ct_image.doctor_id = default_doctor.id
+            db.session.commit()
+
     if request.method == 'POST':
         content = request.form.get('content', '')
         if content and ct_image.doctor_id:
@@ -177,6 +183,7 @@ def message(report_id):
                 content=content
             )
             flash('消息已发送', 'success')
+            return redirect(url_for('patient.message', report_id=report_id))
 
     messages = Message.query.filter_by(ct_image_id=report_id).order_by(Message.created_at.asc()).all()
     doctor = User.query.get(ct_image.doctor_id) if ct_image.doctor_id else None
@@ -192,9 +199,11 @@ def contact_doctor():
     if not current_user.is_patient():
         return redirect(url_for('auth.role_selection'))
 
-    doctors = User.query.filter_by(role='doctor', is_active=True).all()
+    reports = CTImage.query.filter_by(
+        patient_id=current_user.id
+    ).order_by(CTImage.created_at.desc()).all()
 
-    return render_template('patient/contact_doctor.html', doctors=doctors)
+    return render_template('patient/contact_doctor.html', reports=reports)
 
 @patient_bp.route('/patient/feedback/<int:report_id>', methods=['GET', 'POST'])
 @login_required

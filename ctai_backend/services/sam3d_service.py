@@ -399,6 +399,18 @@ class SAM3DInferenceService:
         img3D_roi = correct_roi_dim(img3D_roi)
         gt3D_roi = correct_roi_dim(gt3D_roi)
 
+        if gt3D_roi.shape != img3D_roi.shape:
+            target_shape = img3D_roi.shape
+            diff = [t - g for t, g in zip(target_shape, gt3D_roi.shape)]
+            pad_sizes = []
+            for d in diff:
+                if d > 0:
+                    pad_sizes.extend([0, d])
+                else:
+                    pad_sizes.extend([0, 0])
+            if any(d > 0 for d in diff):
+                gt3D_roi = torch.nn.functional.pad(gt3D_roi, list(reversed(pad_sizes)), mode='constant', value=0)
+
         return img3D_roi, gt3D_roi, meta_info
 
     def _data_preprocess(self, subject, meta_info, category_index, target_spacing=(1.5, 1.5, 1.5), crop_size=128):

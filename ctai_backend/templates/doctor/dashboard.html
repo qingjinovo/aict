@@ -181,7 +181,9 @@
                                     </span>
                                 </div>
                                 <div class="flex gap-2 mt-3">
-                                    {% if report.status in ['doctor_annotating', 'notifying'] %}
+                                    {% if report.status == 'uploaded' %}
+                                        <a href="{{ url_for('doctor.annotate', report_id=report.id) }}" class="btn btn-primary btn-sm">开始标注</a>
+                                    {% elif report.status in ['doctor_annotating', 'notifying'] %}
                                         <a href="{{ url_for('doctor.annotate', report_id=report.id) }}" class="btn btn-primary btn-sm">标注</a>
                                     {% elif report.status in ['ai_completed', 'ai_annotated', 'pending_confirmation'] %}
                                         <a href="{{ url_for('doctor.confirm', report_id=report.id) }}" class="btn btn-primary btn-sm">确认报告</a>

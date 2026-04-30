@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, make_response
 from flask_login import login_required, current_user
 from models.user import User
 from models.ct_image import CTImage
@@ -121,6 +121,7 @@ def report(report_id):
         return redirect(url_for('auth.role_selection'))
 
     ct_image = CTImage.query.get_or_404(report_id)
+    print(f"[DEBUG] Patient report view - report_id={report_id}, status='{ct_image.status}'")
 
     if ct_image.patient_id != current_user.id:
         flash('您无权查看此报告', 'error')

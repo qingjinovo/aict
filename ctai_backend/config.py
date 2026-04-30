@@ -4,6 +4,8 @@ from datetime import timedelta
 class Config:
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
+    TEMPLATES_AUTO_RELOAD = True
+
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'ctai-secret-key-change-in-production'
 
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
@@ -30,6 +32,8 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
+    TEMPLATES_AUTO_RELOAD = True
+    SEND_FILE_MAX_AGE_DEFAULT = 0
 
 class ProductionConfig(Config):
     DEBUG = False

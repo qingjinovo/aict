@@ -1,73 +1,156 @@
 {% extends "base.html" %}
 
-{% block title %}AI 智能分割处理中 - SAM-Med3D{% endblock %}
+{% block title %}报告进度 - SAM-Med3D{% endblock %}
 
 {% block body %}
 <div class="min-h-screen flex items-center justify-center px-4" style="background-color: var(--bg-main);">
     <div class="w-full max-w-2xl">
         <div class="bg-white rounded-lg p-6 sm:p-12" style="border: 1px solid var(--border);">
-            <div class="flex justify-center mb-6 sm:mb-8">
-                <div class="relative">
-                    <i data-lucide="loader-2" class="w-12 h-12 sm:w-16 sm:h-16 animate-spin" style="color: var(--primary-text);"></i>
+            {% if ct_image.status == 'ai_processing' %}
+                <div class="flex justify-center mb-6 sm:mb-8">
+                    <div class="relative">
+                        <i data-lucide="loader-2" class="w-12 h-12 sm:w-16 sm:h-16 animate-spin" style="color: var(--primary-text);"></i>
+                    </div>
                 </div>
-            </div>
 
-            <h1 class="text-center mb-4" style="font-size: clamp(20px, 4vw, 24px); font-weight: 600; color: var(--text-primary);">
-                AI 智能分割处理中
-            </h1>
+                <h1 class="text-center mb-4" style="font-size: clamp(20px, 4vw, 24px); font-weight: 600; color: var(--text-primary);">
+                    AI 智能分割处理中
+                </h1>
 
-            <p class="text-center mb-6 sm:mb-8" style="font-size: clamp(14px, 3vw, 16px); color: var(--text-secondary);">
-                SAM-Med3D 正在分析影像...
-            </p>
+                <p class="text-center mb-6 sm:mb-8" style="font-size: clamp(14px, 3vw, 16px); color: var(--text-secondary);">
+                    SAM-Med3D 正在分析影像...
+                </p>
 
-            <div class="mb-6">
-                <div class="w-full h-3 rounded-full overflow-hidden" style="background-color: var(--bg-main);">
-                    <div id="progress-fill" class="h-full transition-all duration-300" style="width: 0%; background-color: var(--primary-text);"></div>
+                <div class="mb-6">
+                    <div class="w-full h-3 rounded-full overflow-hidden" style="background-color: var(--bg-main);">
+                        <div id="progress-fill" class="h-full transition-all duration-300" style="width: 0%; background-color: var(--primary-text);"></div>
+                    </div>
+                    <p id="progress-text" class="text-center mt-3" style="font-size: 14px; color: var(--text-secondary);">0%</p>
                 </div>
-                <p id="progress-text" class="text-center mt-3" style="font-size: 14px; color: var(--text-secondary);">0%</p>
-            </div>
 
-            <div class="p-4 rounded-lg" style="background-color: var(--primary);">
-                <h3 class="mb-2" style="font-size: 14px; font-weight: 600; color: var(--primary-text);">
-                    SAM-Med3D 技术说明
-                </h3>
-                <ul class="space-y-1" style="font-size: clamp(11px, 2.5vw, 12px); color: var(--text-secondary); line-height: 1.6;">
-                    <li>• 基于 Segment Anything Model 医学影像 3D 版本</li>
-                    <li>• 自动识别器官、组织和潜在病灶区域</li>
-                    <li>• 生成高精度 3D 分割掩码，辅助医生诊断</li>
-                    <li>• 处理完成后，医生可进一步精修标注</li>
-                </ul>
-            </div>
+                <div class="p-4 rounded-lg" style="background-color: var(--primary);">
+                    <h3 class="mb-2" style="font-size: 14px; font-weight: 600; color: var(--primary-text);">
+                        SAM-Med3D 技术说明
+                    </h3>
+                    <ul class="space-y-1" style="font-size: clamp(11px, 2.5vw, 12px); color: var(--text-secondary); line-height: 1.6;">
+                        <li>• 基于 Segment Anything Model 医学影像 3D 版本</li>
+                        <li>• 自动识别器官、组织和潜在病灶区域</li>
+                        <li>• 生成高精度 3D 分割掩码，辅助医生诊断</li>
+                        <li>• 处理完成后，医生可进一步精修标注</li>
+                    </ul>
+                </div>
+
+                <script>
+                    let progress = 0;
+                    const stages = ['正在上传影像数据', 'SAM-Med3D 正在分析影像', '正在进行 3D 自动分割标注', '即将完成'];
+                    let currentStageIndex = 0;
+
+                    function updateProgress() {
+                        if (progress < 100) {
+                            progress += Math.random() * 12;
+                            if (progress > 100) progress = 100;
+
+                            document.getElementById('progress-fill').style.width = progress + '%';
+                            document.getElementById('progress-text').textContent = Math.round(progress) + '%';
+
+                            const newStageIndex = Math.min(Math.floor(progress / 25), stages.length - 1);
+                            if (newStageIndex > currentStageIndex) {
+                                currentStageIndex = newStageIndex;
+                            }
+
+                            setTimeout(updateProgress, 400 + Math.random() * 600);
+                        } else {
+                            setTimeout(function() {
+                                window.location.href = '{{ url_for("doctor.annotate", report_id=ct_image.id) }}';
+                            }, 500);
+                        }
+                    }
+
+                    setTimeout(updateProgress, 500);
+                </script>
+            {% else %}
+                <div class="flex justify-center mb-6 sm:mb-8">
+                    <div class="relative">
+                        {% set status_icons = {
+                            'uploaded': 'upload',
+                            'notifying': 'bell',
+                            'doctor_reviewing': 'eye',
+                            'ai_completed': 'check-circle',
+                            'doctor_annotating': 'pen-tool',
+                            'ai_annotated': 'check-circle',
+                            'pending_confirmation': 'alert-circle',
+                            'completed': 'check-circle'
+                        } %}
+                        {% set status_text = {
+                            'uploaded': '等待处理',
+                            'notifying': '通知医生中',
+                            'doctor_reviewing': '医生审核中',
+                            'ai_completed': 'AI处理完成',
+                            'doctor_annotating': '医生标注中',
+                            'ai_annotated': 'AI标注完成',
+                            'pending_confirmation': '待确认',
+                            'completed': '已完成'
+                        } %}
+                        <i data-lucide="{{ status_icons.get(ct_image.status, 'circle') }}" class="w-12 h-12 sm:w-16 sm:h-16" style="color: var(--text-secondary);"></i>
+                    </div>
+                </div>
+
+                <h1 class="text-center mb-4" style="font-size: clamp(20px, 4vw, 24px); font-weight: 600; color: var(--text-primary);">
+                    {{ status_text.get(ct_image.status, ct_image.status) }}
+                </h1>
+
+                <p class="text-center mb-6 sm:mb-8" style="font-size: clamp(14px, 3vw, 16px); color: var(--text-secondary);">
+                    {% if ct_image.status == 'uploaded' %}
+                        影像已上传，您可以开始标注或等待处理
+                    {% elif ct_image.status == 'notifying' %}
+                        正在通知医生，请稍候
+                    {% elif ct_image.status == 'doctor_reviewing' %}
+                        医生正在审阅您的影像
+                    {% elif ct_image.status in ['ai_completed', 'ai_annotated', 'pending_confirmation'] %}
+                        处理已完成，请前往标注页面继续
+                    {% elif ct_image.status == 'completed' %}
+                        报告已完成，请查看结果
+                    {% else %}
+                        请等待下一步处理
+                    {% endif %}
+                </p>
+
+                {% if ct_image.status in ['uploaded', 'notifying', 'doctor_reviewing'] %}
+                    <div class="p-4 rounded-lg mb-6" style="background-color: var(--bg-main);">
+                        <h3 class="mb-2" style="font-size: 14px; font-weight: 600; color: var(--text-primary);">
+                            处理流程
+                        </h3>
+                        <ol class="space-y-1" style="font-size: clamp(12px, 2.5vw, 13px); color: var(--text-secondary); line-height: 1.6;">
+                            <li class="{% if ct_image.status == 'uploaded' %}text-primary font-semibold{% endif %}">1. 影像上传完成</li>
+                            <li class="{% if ct_image.status in ['notifying', 'doctor_reviewing'] %}text-primary font-semibold{% elif ct_image.status not in ['uploaded'] %}opacity-50{% endif %}">2. 医生审核</li>
+                            <li class="opacity-50">3. AI智能分割</li>
+                            <li class="opacity-50">4. 医生精修标注</li>
+                            <li class="opacity-50">5. 生成诊断报告</li>
+                        </ol>
+                    </div>
+
+                    {% if ct_image.status == 'uploaded' %}
+                    <div class="text-center">
+                        <a href="{{ url_for('doctor.annotate', report_id=ct_image.id) }}" class="btn btn-primary">开始标注</a>
+                        <a href="{{ url_for('doctor.dashboard') }}" class="btn btn-secondary ml-2">返回工作台</a>
+                    </div>
+                    {% else %}
+                    <div class="text-center">
+                        <a href="{{ url_for('doctor.dashboard') }}" class="btn btn-primary">返回工作台</a>
+                    </div>
+                    {% endif %}
+                {% elif ct_image.status in ['ai_completed', 'ai_annotated', 'pending_confirmation'] %}
+                    <div class="text-center">
+                        <a href="{{ url_for('doctor.annotate', report_id=ct_image.id) }}" class="btn btn-primary">前往标注页面</a>
+                        <a href="{{ url_for('doctor.confirm', report_id=ct_image.id) }}" class="btn btn-secondary ml-2">确认报告</a>
+                    </div>
+                {% elif ct_image.status == 'completed' %}
+                    <div class="text-center">
+                        <a href="{{ url_for('doctor.dashboard') }}" class="btn btn-primary">返回工作台</a>
+                    </div>
+                {% endif %}
+            {% endif %}
         </div>
     </div>
 </div>
-
-<script>
-    let progress = 0;
-    const stages = ['正在上传影像数据', 'SAM-Med3D 正在分析影像', '正在进行 3D 自动分割标注', '即将完成'];
-    let currentStageIndex = 0;
-
-    function updateProgress() {
-        if (progress < 100) {
-            progress += Math.random() * 12;
-            if (progress > 100) progress = 100;
-
-            document.getElementById('progress-fill').style.width = progress + '%';
-            document.getElementById('progress-text').textContent = Math.round(progress) + '%';
-
-            const newStageIndex = Math.min(Math.floor(progress / 25), stages.length - 1);
-            if (newStageIndex > currentStageIndex) {
-                currentStageIndex = newStageIndex;
-            }
-
-            setTimeout(updateProgress, 400 + Math.random() * 600);
-        } else {
-            setTimeout(function() {
-                window.location.href = '{{ url_for("doctor.annotate", report_id=ct_image.id) }}';
-            }, 500);
-        }
-    }
-
-    setTimeout(updateProgress, 500);
-</script>
 {% endblock %}
